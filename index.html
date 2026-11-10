@@ -1,1 +1,3071 @@
-<!doctype html><html lang="ru"><meta charset="utf-8"><title>Цикл на двоих</title><body><p>Скоро здесь будет приложение.</p></body></html>
+<meta charset="utf-8">
+<title>Цикл на двоих</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2B0B16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Цикл">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=IBM+Plex+Mono:wght@500&family=Literata:ital,opsz,wght@0,7..72,600;1,7..72,500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
+<style>
+/* Layout concept: рабочий журнал на двоих. Спокойная сине-зелёная бумага, цвет закреплён только за слоями цикла
+   (месячные, овуляция, фертильное окно, ПМС), чтобы легенда читалась с первого взгляда. Крупные числа набраны шрифтом с засечками. */
+:root {
+  --bg: #EDF1EE;
+  --surface: #F8FAF8;
+  --surface-2: #E3E9E5;
+  --ink: #17201C;
+  --ink-2: #394841;
+  --muted: #5A6962;
+  --line: #C7D1CB;
+  --line-soft: #DAE1DC;
+  --btn: #17201C;
+  --on-btn: #F3F7F4;
+  --focus: #1F5FD1;
+
+  --period: #B8344F;
+  --on-period: #FFFFFF;
+  --period-soft: #F2D6DC;
+  --fertile: #15806A;
+  --fertile-soft: #D3ECE4;
+  --ovul: #C98A00;
+  --on-ovul: #1E1500;
+  --ovul-soft: #F5E5B8;
+  --pms: #6C4FA6;
+  --pms-soft: #E4DCF2;
+
+  --danger: #B3261E;
+  --ok: #15806A;
+  --sev1: #766800;
+  --sev2: #A85800;
+  --sev3: #B3341C;
+  --sev4: #7A0F26;
+  --on-sev: #FFFFFF;
+
+  --font-display: 'Literata', Georgia, 'Times New Roman', serif;
+  --font-body: 'Golos Text', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1512;
+    --surface: #161F1B;
+    --surface-2: #202B26;
+    --ink: #E6EDE8;
+    --ink-2: #C1CEC7;
+    --muted: #96A79F;
+    --line: #33433C;
+    --line-soft: #25312B;
+    --btn: #E6EDE8;
+    --on-btn: #0E1512;
+    --focus: #7BA9FF;
+    --period: #E5617D;
+    --on-period: #1B0A0F;
+    --period-soft: #3C202A;
+    --fertile: #4CC3A0;
+    --fertile-soft: #17382F;
+    --ovul: #F0B93A;
+    --on-ovul: #1F1600;
+    --ovul-soft: #3B3011;
+    --pms: #AB8FE2;
+    --pms-soft: #2C2544;
+    --danger: #FF8E85;
+    --ok: #4CC3A0;
+    --sev1: #D9C74B;
+    --sev2: #F29A44;
+    --sev3: #FF8161;
+    --sev4: #FF6283;
+    --on-sev: #170B07;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1512;
+  --surface: #161F1B;
+  --surface-2: #202B26;
+  --ink: #E6EDE8;
+  --ink-2: #C1CEC7;
+  --muted: #96A79F;
+  --line: #33433C;
+  --line-soft: #25312B;
+  --btn: #E6EDE8;
+  --on-btn: #0E1512;
+  --focus: #7BA9FF;
+  --period: #E5617D;
+  --on-period: #1B0A0F;
+  --period-soft: #3C202A;
+  --fertile: #4CC3A0;
+  --fertile-soft: #17382F;
+  --ovul: #F0B93A;
+  --on-ovul: #1F1600;
+  --ovul-soft: #3B3011;
+  --pms: #AB8FE2;
+  --pms-soft: #2C2544;
+  --danger: #FF8E85;
+  --ok: #4CC3A0;
+  --sev1: #D9C74B;
+  --sev2: #F29A44;
+  --sev3: #FF8161;
+  --sev4: #FF6283;
+  --on-sev: #170B07;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.5 var(--font-body);
+  padding-block: 0 calc(84px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 30;
+  background: var(--bg);
+}
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 980px; margin: 0 auto; }
+.display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+.eyebrow { font: 500 11px/1.3 var(--font-mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.nums { font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- header ---------- */
+.top {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  padding-top: 12px; padding-bottom: 4px;
+}
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.brand-name { font: 600 21px/1 var(--font-display); letter-spacing: -0.02em; }
+.who { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: var(--muted); }
+.who img { width: 26px; height: 26px; border-radius: 50%; flex: none; }
+.who .nm { color: var(--ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+#status { font: 500 11px var(--font-mono); color: var(--muted); min-width: 0; }
+.main { padding-top: 20px; display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+.banner { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--ovul-soft); color: var(--ink); font-size: 13px; border: 1px solid var(--ovul); }
+.banner.err { background: var(--period-soft); border-color: var(--period); }
+
+/* ---------- controls ---------- */
+.btn {
+  min-height: 40px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-weight: 500; cursor: pointer; line-height: 1.2;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn-primary { background: var(--btn); color: var(--on-btn); border-color: var(--btn); }
+.btn-primary:hover { background: var(--btn); filter: brightness(1.18); }
+.btn-danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+.btn-sm { min-height: 34px; padding: 5px 10px; font-size: 13px; }
+.btn-quiet { border-color: transparent; background: transparent; color: var(--ink-2); }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn:focus-visible, .chip:focus-visible, .day:focus-visible, .tb:focus-visible, .sc:focus-visible,
+input:focus-visible, textarea:focus-visible, select:focus-visible, .switch:focus-visible, .thumb:focus-visible {
+  outline: 3px solid var(--focus); outline-offset: 2px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  min-height: 36px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); cursor: pointer; font-size: 14px;
+}
+.chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip.on::before { content: "\2713\00a0"; }
+.chip-x { padding-right: 8px; }
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 6px; font: 500 11px/1.5 var(--font-mono);
+  letter-spacing: 0.03em; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line);
+}
+.tag-share { background: var(--fertile-soft); border-color: var(--fertile); color: var(--ink); }
+.tag-priv { color: var(--muted); }
+.tag-ph-M { background: var(--period-soft); border-color: var(--period); color: var(--ink); }
+.tag-ph-F { background: var(--surface-2); }
+.tag-ph-O { background: var(--ovul-soft); border-color: var(--ovul); color: var(--ink); }
+.tag-ph-L { background: var(--pms-soft); border-color: var(--pms); color: var(--ink); }
+
+.inp, .sel, .ta {
+  width: 100%; min-height: 42px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink);
+}
+.ta { min-height: 76px; resize: vertical; line-height: 1.45; }
+.inp.num { max-width: 160px; font-variant-numeric: tabular-nums; }
+label.lbl { display: block; font-weight: 500; margin-bottom: 6px; }
+.help { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+.switch {
+  flex: none; width: 46px; height: 28px; padding: 0; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface-2); position: relative; cursor: pointer;
+}
+.switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); transition: transform .15s, background .15s; }
+.switch[aria-checked="true"] { background: var(--ink); border-color: var(--ink); }
+.switch[aria-checked="true"] .knob { transform: translateX(18px); background: var(--bg); }
+.swrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.swrow:first-child { border-top: 0; padding-top: 0; }
+.swtext { min-width: 0; }
+.swtext b { font-weight: 500; display: block; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); max-width: 100%; }
+.seg button { border: 0; background: none; padding: 8px 14px; min-height: 40px; cursor: pointer; font-weight: 500; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+.stepper { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.stepper button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 18px; line-height: 1; }
+.stepper input { width: 72px; text-align: center; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-variant-numeric: tabular-nums; }
+.stepper .suffix { color: var(--muted); font-size: 14px; }
+.frow { padding: 14px 0; border-top: 1px solid var(--line-soft); display: grid; gap: 4px; }
+.frow:first-of-type { border-top: 0; padding-top: 0; }
+
+/* ---------- cards ---------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.card h2 { font: 600 20px/1.2 var(--font-display); letter-spacing: -0.01em; }
+.card > .lead { color: var(--muted); }
+.lead { color: var(--muted); max-width: 62ch; }
+
+.hello { display: grid; gap: 14px; max-width: 760px; padding-top: 8px; }
+.hello h1 { font: 600 clamp(28px, 6vw, 40px)/1.1 var(--font-display); letter-spacing: -0.02em; }
+.role-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.role-card { text-align: left; padding: 18px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; gap: 6px; }
+.role-card:hover { border-color: var(--ink); }
+.role-card b { font: 600 20px var(--font-display); }
+.role-card span { color: var(--muted); font-size: 14px; }
+.skeleton { height: 120px; border-radius: 16px; background: linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size: 200% 100%; animation: sk 1.4s linear infinite; }
+@keyframes sk { to { background-position: -200% 0; } }
+
+/* ---------- hero ---------- */
+.hero { display: grid; gap: 18px 28px; grid-template-columns: auto minmax(0, 1fr); align-items: center; padding: 4px 0 2px; }
+.hero-num { display: flex; align-items: baseline; gap: 10px; }
+.hero-num .num { font: 600 clamp(64px, 16vw, 92px)/0.9 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.hero-num .unit { font: 500 11px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); max-width: 8ch; }
+.hero-side { display: grid; gap: 10px; min-width: 0; }
+.hero-phase { font: italic 500 clamp(22px, 5vw, 30px)/1.15 var(--font-display); }
+.hero-hint { color: var(--muted); font-size: 14px; max-width: 52ch; }
+@media (max-width: 640px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+
+.ribbon-wrap { display: grid; gap: 6px; padding-top: 6px; }
+.ribbon { position: relative; display: flex; gap: 2px; height: 34px; }
+.seg-p { flex-basis: 0; min-width: 0; display: flex; align-items: center; padding: 0 8px; font: 500 11px var(--font-mono); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.seg-p:first-child { border-radius: 10px 4px 4px 10px; }
+.seg-p:last-child { border-radius: 4px 10px 10px 4px; }
+.seg-M { background: var(--period); color: var(--on-period); }
+.seg-F { background: var(--surface-2); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); }
+.seg-O { background: var(--ovul); color: var(--on-ovul); justify-content: center; padding: 0; }
+.seg-L { background: var(--pms-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--pms); }
+.ribbon-now { position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1.5px; background: var(--ink); border-radius: 2px; box-shadow: 0 0 0 2px var(--bg); }
+.ribbon-fw { position: relative; height: 6px; border-radius: 3px; background: var(--line-soft); }
+.ribbon-fw i { position: absolute; top: 0; bottom: 0; background: var(--fertile); border-radius: 3px; }
+.ribbon-cap { display: flex; justify-content: space-between; gap: 8px; font: 500 11px var(--font-mono); color: var(--muted); }
+.alert { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--period); background: var(--period-soft); display: grid; gap: 8px; }
+.alert b { font-weight: 600; }
+
+/* ---------- upcoming ---------- */
+.up-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.up { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: var(--surface); display: grid; gap: 4px; align-content: start; border-top-width: 4px; }
+.up-period { border-top-color: var(--period); }
+.up-ov { border-top-color: var(--ovul); }
+.up-fw { border-top-color: var(--fertile); }
+.up-pms { border-top-color: var(--pms); }
+.up .big { font: 600 18px/1.2 var(--font-display); }
+.up .rel { font-size: 13px; color: var(--muted); }
+
+/* ---------- calendar ---------- */
+.cal-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+.col-a, .col-b { display: contents; }
+.col-a > .calcard { order: 1; }
+.col-b > .daypanel { order: 2; }
+.col-b > .upcard { order: 3; }
+.col-a > .legend { order: 4; }
+@media (min-width: 900px) {
+  .cal-layout { grid-template-columns: minmax(0, 540px) minmax(0, 1fr); align-items: start; }
+  .col-a, .col-b { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .col-a > *, .col-b > * { order: 0 !important; }
+}
+.calhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.calhead h2 { text-transform: capitalize; }
+.calnav { display: flex; gap: 6px; }
+.calnav .btn { min-width: 40px; padding-inline: 10px; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.dow { font: 500 11px var(--font-mono); color: var(--muted); text-align: center; padding: 2px 0 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.day {
+  position: relative; display: grid; place-items: center; aspect-ratio: 1; padding: 0; min-width: 0;
+  border: 1px solid var(--line-soft); border-radius: 10px; background: var(--bg);
+  color: var(--ink); font: 500 14px var(--font-body); cursor: pointer; overflow: hidden;
+}
+.day .n { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-variant-numeric: tabular-nums; }
+.day.out { opacity: 0.4; }
+.day.fw { background: var(--fertile-soft); }
+.day.fw::after { content: ""; position: absolute; left: 7px; right: 7px; bottom: 4px; height: 3px; border-radius: 2px; background: var(--fertile); }
+.day.pms::before { content: ""; position: absolute; left: 7px; right: 7px; top: 4px; height: 3px; border-radius: 2px; background: var(--pms); }
+.day.perp { background: repeating-linear-gradient(135deg, var(--period-soft) 0 5px, transparent 5px 10px); border: 1px dashed var(--period); color: var(--ink); }
+.day.per { background: var(--period); border-color: var(--period); color: var(--on-period); }
+.day.ov .n { background: var(--ovul); color: var(--on-ovul); font-weight: 700; }
+.day.ovp .n { box-shadow: inset 0 0 0 2px var(--ovul); font-weight: 600; }
+.day.today { box-shadow: inset 0 0 0 2px var(--ink); }
+.day.today .n { font-weight: 700; }
+.day.sel { outline: 3px solid color-mix(in srgb, var(--focus) 60%, transparent); outline-offset: 1px; }
+.day .dot { position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-2); }
+.day.per .dot { background: var(--on-period); }
+.day .react { position: absolute; top: 6px; left: 6px; width: 7px; height: 7px; background: var(--danger); border-radius: 1px; }
+.day.per .react { background: var(--on-period); }
+
+.legend h2 { font-size: 18px; }
+.lg { display: grid; gap: 12px 18px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.lg-item { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.lg-item .day { width: 46px; flex: none; cursor: default; }
+.lg-item b { font-weight: 500; display: block; }
+.lg-item span.d { font-size: 13px; color: var(--muted); }
+
+.daypanel h2 { font: 600 22px/1.15 var(--font-display); }
+.dl { display: grid; gap: 8px; margin: 0; }
+.dl > div { display: grid; grid-template-columns: minmax(0, 9em) minmax(0, 1fr); gap: 4px 12px; padding-top: 8px; border-top: 1px solid var(--line-soft); }
+.dl dt { color: var(--muted); font-size: 13px; }
+.dl dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 460px) { .dl > div { grid-template-columns: minmax(0, 1fr); } }
+.who-note { font-size: 13px; padding: 8px 12px; border-radius: 10px; background: var(--fertile-soft); border: 1px solid var(--fertile); }
+
+/* ---------- diary ---------- */
+.datenav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.datenav h2 { font: 600 clamp(20px, 4.4vw, 26px)/1.15 var(--font-display); flex: 1 1 200px; min-width: 0; }
+.group { display: grid; gap: 16px; }
+.group > h3 { font: 500 11px var(--font-mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.field { display: grid; gap: 8px; }
+.fhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.flabel { font-weight: 500; }
+.scale { display: flex; flex-wrap: wrap; gap: 6px; }
+.sc { min-width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-variant-numeric: tabular-nums; }
+.sc.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.addopt { display: flex; gap: 6px; max-width: 320px; }
+.addopt .inp { min-height: 36px; }
+
+/* ---------- allergens ---------- */
+.al-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.al-top h1 { font: 600 clamp(26px, 5vw, 34px)/1.1 var(--font-display); letter-spacing: -0.02em; }
+.al-list { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.acard { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; border-left-width: 6px; }
+.acard.s1 { border-left-color: var(--sev1); }
+.acard.s2 { border-left-color: var(--sev2); }
+.acard.s3 { border-left-color: var(--sev3); }
+.acard.s4 { border-left-color: var(--sev4); }
+.acard h3 { font: 600 20px/1.2 var(--font-display); overflow-wrap: anywhere; }
+.acard .row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.sev { flex: none; padding: 2px 9px; border-radius: 6px; font: 600 11px/1.6 var(--font-mono); letter-spacing: 0.03em; color: var(--on-sev); text-transform: uppercase; }
+.sev1 { background: var(--sev1); }
+.sev2 { background: var(--sev2); }
+.sev3 { background: var(--sev3); }
+.sev4 { background: var(--sev4); }
+.photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.thumb { aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); padding: 0; background: var(--surface-2); cursor: zoom-in; display: grid; place-items: center; font-size: 12px; color: var(--muted); text-align: center; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph-add { cursor: pointer; border-style: dashed; }
+.ph-rm { position: relative; }
+.ph-rm .x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 16px; line-height: 1; }
+.checkbox { border: 1px dashed var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; background: var(--surface); }
+.result { padding: 10px 12px; border-radius: 10px; background: var(--surface-2); display: grid; gap: 6px; }
+.result.hit { background: var(--period-soft); border: 1px solid var(--period); }
+
+/* ---------- overlays ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 100; background: rgba(8, 14, 11, 0.55);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+}
+.sheet {
+  width: min(680px, 100%); max-height: 94%; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 20px 20px 0 0;
+  padding: 20px 18px max(20px, env(safe-area-inset-bottom, 0px)); display: grid; gap: 16px;
+}
+@media (min-width: 720px) { .overlay { align-items: center; } .sheet { border-radius: 20px; max-height: 90%; } }
+.sheet h2 { font: 600 24px/1.15 var(--font-display); }
+.lightbox { align-items: center; background: rgba(0, 0, 0, 0.88); }
+.lightbox-in { display: grid; gap: 12px; max-width: 100%; max-height: 100%; padding: 12px; justify-items: center; }
+.lightbox img { max-width: 100%; max-height: 74vh; border-radius: 10px; display: block; }
+.lightbox .btn { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.3); }
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 200; max-width: min(92vw, 460px);
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.toast.show { opacity: 1; }
+.toast.err { background: var(--danger); color: #fff; }
+.foot { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); max-width: 70ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ---------- phase stage and living drop ---------- */
+:root { --pa: var(--ink-2); }
+.stage {
+  position: relative; overflow: hidden; border-radius: 28px; padding: 18px 18px 26px;
+  background: linear-gradient(165deg, var(--st-a, #E3E9E5), var(--st-b, #B8C7BF)); color: var(--st-ink, var(--ink));
+  display: grid; gap: 6px; justify-items: center; text-align: center; isolation: isolate;
+}
+.stage.xfade::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: linear-gradient(165deg, var(--from-a), var(--from-b)); animation: stagefade 1.1s ease-out forwards; pointer-events: none;
+}
+@keyframes stagefade { to { opacity: 0; } }
+.stage-date { font: 500 11px/1.3 var(--font-mono); letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.85; }
+.drop {
+  position: relative; width: min(300px, 74vw); aspect-ratio: 1; padding: 0; border: 0; background: none; cursor: pointer;
+  touch-action: pan-y; -webkit-tap-highlight-color: transparent; color: inherit; border-radius: 50%;
+}
+.drop canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.drop-c { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 2px; padding-top: 14%; pointer-events: none; color: var(--st-dink, #fff); }
+.drop-c .num { font: 600 clamp(54px, 15vw, 80px)/0.95 var(--font-display); letter-spacing: -0.04em; }
+.drop-c .lab { font: 600 11px/1.3 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; max-width: 11ch; }
+.stage-copy { display: grid; gap: 6px; max-width: 34ch; margin-top: -6px; }
+.stage-k { font: 500 14px/1.35 var(--font-body); opacity: 0.92; }
+.stage-t { font: 600 clamp(22px, 5.6vw, 30px)/1.15 var(--font-display); letter-spacing: -0.015em; }
+.stage-s { font-size: 14px; opacity: 0.88; }
+.stage .drop:focus-visible { outline: 3px solid var(--st-ink); outline-offset: 4px; }
+
+.tips-sec { display: grid; gap: 12px; min-width: 0; }
+.tips { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px 2px 10px; margin: 0 -2px; }
+.tip {
+  flex: 0 0 min(300px, 84%); scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line);
+  border-top: 4px solid var(--pa); border-radius: 16px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0;
+}
+.tip h3 { font: 600 18px/1.2 var(--font-display); }
+.tip p { font-size: 14px; color: var(--ink-2); }
+.tip-doc { border-top-color: var(--sev2); }
+.tag-warn { background: transparent; border-color: var(--sev2); color: var(--ink); justify-self: start; }
+.tip .tag { justify-self: start; }
+.tip-src { font-size: 12px !important; color: var(--muted) !important; }
+.tip-src a { color: var(--ink-2); }
+
+/* ---------- charts ---------- */
+.chart-scroll { overflow-x: auto; max-width: 100%; }
+.chart-scroll svg { display: block; max-width: none; }
+.freq { display: grid; gap: 8px; }
+.freq-row { display: grid; grid-template-columns: minmax(80px, 34%) minmax(0, 1fr) 28px; gap: 10px; align-items: center; font-size: 14px; }
+.freq-row span { overflow-wrap: anywhere; }
+.freq-bar { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+.freq-bar i { display: block; height: 100%; background: var(--pa); border-radius: 5px; }
+.freq-row b { text-align: right; font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) { .stage.xfade::before { animation: none; opacity: 0; } }
+
+/* ---------- phase theme: animated tokens, ambient glow ---------- */
+@property --bg { syntax: '<color>'; inherits: true; initial-value: #EDF1EE; }
+@property --surface { syntax: '<color>'; inherits: true; initial-value: #F8FAF8; }
+@property --surface-2 { syntax: '<color>'; inherits: true; initial-value: #E3E9E5; }
+@property --ink { syntax: '<color>'; inherits: true; initial-value: #17201C; }
+@property --ink-2 { syntax: '<color>'; inherits: true; initial-value: #394841; }
+@property --muted { syntax: '<color>'; inherits: true; initial-value: #5A6962; }
+@property --line { syntax: '<color>'; inherits: true; initial-value: #C7D1CB; }
+@property --line-soft { syntax: '<color>'; inherits: true; initial-value: #DAE1DC; }
+@property --btn { syntax: '<color>'; inherits: true; initial-value: #17201C; }
+@property --on-btn { syntax: '<color>'; inherits: true; initial-value: #F3F7F4; }
+@property --pa { syntax: '<color>'; inherits: true; initial-value: #394841; }
+@property --amb1 { syntax: '<color>'; inherits: true; initial-value: rgba(0,0,0,0); }
+@property --amb2 { syntax: '<color>'; inherits: true; initial-value: rgba(0,0,0,0); }
+:root {
+  transition: --bg 1.1s ease, --surface 1.1s ease, --surface-2 1.1s ease, --ink 1.1s ease, --ink-2 1.1s ease, --muted 1.1s ease,
+    --line 1.1s ease, --line-soft 1.1s ease, --btn 1.1s ease, --on-btn 1.1s ease, --pa 1.1s ease, --amb1 1.1s ease, --amb2 1.1s ease;
+}
+#ambient {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.55;
+  background:
+    radial-gradient(90% 46% at 100% 0%, var(--amb1), transparent 70%),
+    radial-gradient(80% 42% at 0% 100%, var(--amb2), transparent 70%);
+}
+
+/* ---------- bottom navigation ---------- */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px);
+  border-top: 1px solid var(--line);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+}
+.tabbar-in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+.tb {
+  display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 56px; padding: 4px 2px;
+  background: none; border: 0; border-radius: 14px; cursor: pointer; color: var(--muted); min-width: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.tb-ic { display: grid; place-items: center; width: 52px; height: 30px; border-radius: 15px; transition: background-color .25s ease, color .25s ease; }
+.tb-ic svg { width: 23px; height: 23px; }
+.tb-l { font: 500 11px/1.2 var(--font-body); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb:hover { color: var(--ink); }
+.tb[aria-current="page"] { color: var(--ink); }
+.tb[aria-current="page"] .tb-ic { background: color-mix(in srgb, var(--pa) 22%, transparent); color: var(--ink); }
+.tb[aria-current="page"] .tb-l { font-weight: 600; }
+@media (max-width: 360px) { .tb-ic { width: 44px; } .tb-l { font-size: 10.5px; } }
+
+#bg-cv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; display: block; }
+.chips-scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 4px; margin: 0 -2px; }
+.chips-scroll::-webkit-scrollbar { display: none; }
+.chips-scroll .chip { flex: none; white-space: nowrap; }
+</style>
+<div id="app"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+var CycleEngine = (function () {
+  'use strict';
+  var DAY = 86400000;
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(y, m, d) { return y + '-' + pad(m) + '-' + pad(d); }
+  function toNum(s) { var p = String(s).split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / DAY); }
+  function fromNum(n) { var t = new Date(n * DAY); return iso(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate()); }
+  function dayNum(y, m, d) { return Math.round(Date.UTC(y, m, d) / DAY); }
+  function todayStr() { var t = new Date(); return iso(t.getFullYear(), t.getMonth() + 1, t.getDate()); }
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+
+  var DEFAULTS = {
+    cycleLen: 28,
+    periodLen: 5,
+    ovMode: 'luteal',      // 'luteal': от конца цикла; 'day': конкретный день цикла
+    lutealLen: 14,
+    ovDay: 14,
+    fertileBefore: 5,
+    fertileAfter: 1,
+    pmsDays: 5,
+    autoLen: false,
+    recalc: true
+  };
+
+  function cfgOf(c) { return Object.assign({}, DEFAULTS, c || {}); }
+
+  function sortedStarts(list) {
+    var seen = {}, out = [];
+    (list || []).forEach(function (s) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s) && !seen[s]) { seen[s] = 1; out.push(s); }
+    });
+    return out.sort();
+  }
+
+  function effLenInfo(cfg, starts) {
+    if (cfg.autoLen && starts.length >= 3) {
+      var ls = [];
+      for (var i = 1; i < starts.length; i++) {
+        var l = toNum(starts[i]) - toNum(starts[i - 1]);
+        if (l >= 15 && l <= 60) ls.push(l);
+      }
+      ls = ls.slice(-6);
+      if (ls.length >= 2) {
+        var sum = ls.reduce(function (a, b) { return a + b; }, 0);
+        return { len: Math.round(sum / ls.length), auto: true };
+      }
+    }
+    return { len: cfg.cycleLen, auto: false };
+  }
+
+  function lutealEff(cfg, base) {
+    return cfg.ovMode === 'day' ? Math.max(1, base - cfg.ovDay) : cfg.lutealLen;
+  }
+
+  // s: номер дня начала цикла; L: длина; ovA / eA: фактические овуляция и конец месячных (номера дней) или null
+  function mk(cfg, s, L, ovA, eA, kind) {
+    L = Math.max(2, Math.round(L));
+    var periodLen = eA != null ? clamp(eA - s + 1, 1, L) : clamp(cfg.periodLen, 1, L);
+    var hi = L - 1;
+    var od = cfg.ovMode === 'day' ? cfg.ovDay : L - cfg.lutealLen;
+    var lo = Math.max(1, Math.min(periodLen + 1, hi));
+    od = clamp(Math.round(od), lo, hi);
+    var ovKind = 'p';
+    if (ovA != null) { od = clamp(ovA - s + 1, 1, hi); ovKind = 'a'; }
+    var ovN = s + od - 1;
+    var fwStart = Math.max(s, ovN - cfg.fertileBefore);
+    var fwEnd = Math.min(s + L - 1, ovN + cfg.fertileAfter);
+    var pmsFrom = cfg.pmsDays > 0 ? Math.max(od + 1, L - cfg.pmsDays + 1) : L + 1;
+    return { start: s, len: L, periodLen: periodLen, od: od, ovKind: ovKind, ovN: ovN,
+             fwStart: fwStart, fwEnd: fwEnd, pmsFrom: pmsFrom, kind: kind };
+  }
+
+  function buildCycles(cfgIn, startsIso, ovul, ends, horizon) {
+    var cfg = cfgOf(cfgIn);
+    var list = sortedStarts(startsIso);
+    var out = [];
+    if (!list.length) return out;
+    ovul = ovul || {}; ends = ends || {};
+    var base = effLenInfo(cfg, list).len;
+    var lut = lutealEff(cfg, base);
+    var nums = list.map(toNum);
+    for (var i = 0; i < nums.length; i++) {
+      var s = nums[i];
+      var key = list[i];
+      var ovA = ovul[key] ? toNum(ovul[key]) : null;
+      var eA = ends[key] ? toNum(ends[key]) : null;
+      var len, kind;
+      if (i + 1 < nums.length) { len = nums[i + 1] - s; kind = 'past'; }
+      else {
+        kind = 'current';
+        len = base;
+        if (ovA != null && cfg.recalc) len = (ovA - s + 1) + lut;
+      }
+      out.push(mk(cfg, s, len, ovA, eA, kind));
+    }
+    var last = out[out.length - 1];
+    var next = last.start + last.len;
+    var guard = 0;
+    while (next <= horizon && guard++ < 60) {
+      out.push(mk(cfg, next, base, null, null, 'pred'));
+      next += Math.max(2, base);
+    }
+    return out;
+  }
+
+  function infoAt(cycles, n, t) {
+    for (var i = cycles.length - 1; i >= 0; i--) {
+      var c = cycles[i];
+      if (n >= c.start) {
+        if (n >= c.start + c.len) return null;
+        var d = n - c.start + 1;
+        var ph = d <= c.periodLen ? 'M' : (d < c.od ? 'F' : (d === c.od ? 'O' : 'L'));
+        return {
+          cycleDay: d,
+          phase: ph,
+          period: d <= c.periodLen ? ((c.kind === 'pred' || n > t) ? 'p' : 'a') : null,
+          ov: d === c.od ? c.ovKind : null,
+          fw: n >= c.fwStart && n <= c.fwEnd,
+          pms: ph === 'L' && d >= c.pmsFrom,
+          kind: c.kind, start: c.start, len: c.len
+        };
+      }
+    }
+    return null;
+  }
+
+  // Состояние последнего реального цикла: сколько до следующих месячных и есть ли задержка
+  function status(cycles, t) {
+    var cur = null;
+    for (var i = 0; i < cycles.length; i++) if (cycles[i].kind !== 'pred') cur = cycles[i];
+    if (!cur || t < cur.start) return null;
+    var nextStart = cur.start + cur.len;
+    return { cycleStart: cur.start, len: cur.len, nextStart: nextStart,
+             daysToNext: nextStart - t, lateDays: t > nextStart ? t - nextStart : 0 };
+  }
+
+  // Первый отрезок подряд идущих дней, где у getInfo(n)[key] истинно: идущий сейчас или ближайший будущий
+  function firstRun(getInfo, key, t, span) {
+    function f(n) { var i = getInfo(n); return !!(i && i[key]); }
+    var s, e;
+    if (f(t)) {
+      s = t; while (f(s - 1) && t - s < 60) s--;
+      e = t; while (f(e + 1) && e - t < 60) e++;
+      return { start: s, end: e, now: true };
+    }
+    for (var n = t + 1; n <= t + span; n++) {
+      if (f(n)) {
+        e = n; while (f(e + 1) && e - n < 60) e++;
+        return { start: n, end: e, now: false };
+      }
+    }
+    return null;
+  }
+
+  // Полоса текущего цикла из последовательных дней: [{ph, len, from}]
+  function ribbon(getInfo, t) {
+    var cur = getInfo(t);
+    if (!cur || !cur.phase || !cur.cycleDay) return null;
+    var start = t - (cur.cycleDay - 1);
+    var segs = [];
+    for (var n = start; n < start + 90; n++) {
+      var i = getInfo(n);
+      if (!i || !i.phase) break;
+      if (n > start && i.cycleDay === 1) break;
+      var last = segs[segs.length - 1];
+      if (last && last.ph === i.phase) last.len++;
+      else segs.push({ ph: i.phase, len: 1, from: n });
+    }
+    var total = segs.reduce(function (a, s) { return a + s.len; }, 0);
+    var fw = null;
+    for (var k = start; k < start + total; k++) {
+      var q = getInfo(k);
+      if (q && q.fw) { if (!fw) fw = { from: k, to: k }; else fw.to = k; }
+    }
+    return { start: start, total: total, day: cur.cycleDay, segs: segs, fw: fw };
+  }
+
+  // Параметры цикла в днях цикла, без привязки к датам (для подсказки в настройках)
+  function plan(cfgIn, startsIso) {
+    var cfg = cfgOf(cfgIn);
+    var info = effLenInfo(cfg, sortedStarts(startsIso));
+    var c = mk(cfg, 0, info.len, null, null, 'pred');
+    return {
+      len: c.len, periodLen: c.periodLen, ovDay: c.od, luteal: c.len - c.od,
+      fwFrom: c.fwStart + 1, fwTo: c.fwEnd + 1,
+      pmsFrom: c.pmsFrom <= c.len ? c.pmsFrom : null, auto: info.auto
+    };
+  }
+
+  return {
+    DEFAULTS: DEFAULTS, cfgOf: cfgOf, sortedStarts: sortedStarts,
+    iso: iso, toNum: toNum, fromNum: fromNum, dayNum: dayNum, todayStr: todayStr,
+    buildCycles: buildCycles, infoAt: infoAt, status: status,
+    firstRun: firstRun, ribbon: ribbon, plan: plan
+  };
+})();
+if (typeof module !== 'undefined') module.exports = CycleEngine;
+</script>
+<script>
+/* ====================== backend: Supabase ======================
+   Один документ = одна строка таблицы docs (path, owner, data).
+   Интерфейс повторяет то, что приложение уже использует: doc / collection / onSnapshot / set / update / delete.
+   Доступ решает база (RLS, см. schema.sql), а не этот файл. */
+var Backend = (function () {
+  var URL_ = 'https://sfoydwrxdbnsvbiahwgk.supabase.co';
+  var KEY_ = 'sb_publishable_qj9QTxSQfrgXLHap0D1A7g_l9gRX0MA';
+  var sb = window.supabase.createClient(URL_, KEY_, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  var listeners = [];
+  var uidCache = null;
+
+  function fail(e) { return e && e.message ? e : new Error(String(e)); }
+  function rows(res) { if (res.error) throw fail(res.error); return res.data || []; }
+  function childrenOf(prefix, all) {
+    var out = [];
+    all.forEach(function (r) {
+      if (r.path.indexOf(prefix) !== 0) return;
+      var rest = r.path.slice(prefix.length);
+      if (rest && rest.indexOf('/') < 0) out.push({ id: rest, data: r.data });
+    });
+    return out;
+  }
+  function snapDoc(id, data) {
+    return { id: id, exists: data != null, data: function () { return data == null ? undefined : JSON.parse(JSON.stringify(data)); } };
+  }
+  function snapCol(list) {
+    return { docs: list.map(function (x) { return snapDoc(x.id, x.data); }), size: list.length, empty: !list.length };
+  }
+
+  // Подписка: при любом изменении таблицы каждая открытая подписка перечитывает свои строки
+  function listen(fetchFn, fn, onErr) {
+    var l = { fetch: fetchFn, fn: fn, onErr: onErr, dead: false };
+    listeners.push(l);
+    var run = function () { if (l.dead) return; l.fetch().then(function (v) { fn(v); }, function (e) { onErr && onErr(e); }); };
+    run();
+    return function () { l.dead = true; listeners = listeners.filter(function (x) { return x !== l; }); };
+  }
+  var channel = sb.channel('docs-live').on('postgres_changes', { event: '*', schema: 'public', table: 'docs' }, function () {
+    listeners.slice().forEach(function (l) {
+      l.fetch().then(function (v) { if (!l.dead) l.fn(v); }, function (e) { if (!l.dead && l.onErr) l.onErr(e); });
+    });
+  }).subscribe();
+
+  function readPrefix(prefix) {
+    return sb.from('docs').select('path,data').like('path', prefix + '%').then(function (res) { return rows(res); });
+  }
+  function colFetch(path) {
+    return readPrefix(path + '/').then(function (all) { return snapCol(childrenOf(path + '/', all)); });
+  }
+
+  function write(path, data) {
+    return sb.auth.getUser().then(function (u) {
+      if (!u.data || !u.data.user) throw new Error('нет входа');
+      var uid = u.data.user.id;
+      return sb.from('docs').update({ data: data, updated_at: new Date().toISOString() }).eq('path', path).select('path').then(function (res) {
+        if (res.error) throw fail(res.error);
+        if (res.data && res.data.length) return;
+        return sb.from('docs').insert({ path: path, owner: uid, data: data }).then(function (ins) { if (ins.error) throw fail(ins.error); });
+      });
+    });
+  }
+
+  function docRef(path) {
+    return {
+      path: path,
+      get: function () {
+        return sb.from('docs').select('data').eq('path', path).maybeSingle().then(function (res) {
+          if (res.error) throw fail(res.error);
+          return snapDoc(path.split('/').pop(), res.data ? res.data.data : null);
+        });
+      },
+      set: function (data) { return write(path, data); },
+      update: function (patch) {
+        return docRef(path).get().then(function (s) { return write(path, Object.assign({}, s.exists ? s.data() : {}, patch)); });
+      },
+      delete: function () {
+        return sb.from('docs').delete().eq('path', path).then(function (res) { if (res.error) throw fail(res.error); });
+      },
+      onSnapshot: function (fn, onErr) {
+        return listen(function () {
+          return sb.from('docs').select('data').eq('path', path).maybeSingle().then(function (res) {
+            if (res.error) throw fail(res.error);
+            return snapDoc(path.split('/').pop(), res.data ? res.data.data : null);
+          });
+        }, fn, onErr);
+      },
+      collection: function (name) { return colRef(path + '/' + name); }
+    };
+  }
+  function colRef(path) {
+    return {
+      path: path,
+      doc: function (id) { return docRef(path + '/' + id); },
+      onSnapshot: function (fn, onErr) { return listen(function () { return colFetch(path); }, fn, onErr); }
+    };
+  }
+
+  return {
+    client: sb,
+    db: { doc: docRef, collection: colRef },
+    getUser: function () {
+      return sb.auth.getSession().then(function (r) {
+        var s = r.data && r.data.session;
+        if (!s || !s.user) return null;
+        uidCache = s.user.id;
+        return { id: s.user.id, email: s.user.email };
+      });
+    },
+    signIn: function (email) {
+      var redirect = location.origin + location.pathname;
+      return sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: redirect } }).then(function (res) { if (res.error) throw fail(res.error); });
+    },
+    signOut: function () { return sb.auth.signOut(); },
+    // Имена партнёров пока не хранятся: показываем роль, а не почту
+    profiles: function (ids) {
+      var out = {};
+      (ids || []).forEach(function (id) { out[id] = { id: id, name: id === uidCache ? 'ты' : 'партнёр' }; });
+      return Promise.resolve(out);
+    },
+    createInvite: function () {
+      var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', code = '';
+      for (var i = 0; i < 8; i++) code += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+      return sb.auth.getUser().then(function (u) {
+        var uid = u.data.user.id;
+        return sb.from('invites').insert({ code: code, owner: uid }).then(function (res) {
+          if (res.error) throw fail(res.error);
+          return code;
+        });
+      });
+    },
+    acceptInvite: function (code) {
+      return sb.rpc('accept_invite', { p_code: String(code || '').trim().toUpperCase() }).then(function (res) {
+        if (res.error) {
+          var m = res.error.message || '';
+          throw new Error(m.indexOf('invite_not_found') >= 0 ? 'Код не найден или уже использован' : m.indexOf('own_invite') >= 0 ? 'Это ваш собственный код' : fail(res.error).message);
+        }
+      });
+    }
+  };
+})();
+(function () {
+'use strict';
+var E = CycleEngine;
+
+/* ====================== constants ====================== */
+var ROUTES = ['calendar', 'diary', 'charts', 'allergens', 'setup'];
+var DEFAULT_NAMES = { M: 'Менструация', F: 'Фолликулярная фаза', O: 'Овуляция', L: 'Лютеиновая фаза' };
+var PHASE_HINT = {
+  M: 'Идут месячные. Часто нужно больше отдыха и тепла.',
+  F: 'Энергия обычно растёт, самочувствие выравнивается.',
+  O: 'Овуляция. Самое фертильное время цикла.',
+  L: 'Вторая половина цикла. К концу возможны признаки ПМС.'
+};
+var SEV_LABEL = { 1: 'Лёгкая', 2: 'Средняя', 3: 'Сильная', 4: 'Опасная' };
+var SEV_DESC = { 1: 'Неприятно, но терпимо', 2: 'Заметная реакция', 3: 'Тяжёлая реакция', 4: 'Угроза здоровью, исключить полностью' };
+var CATS = ['Молочное', 'Яйца', 'Орехи и арахис', 'Рыба и морепродукты', 'Злаки и глютен', 'Фрукты', 'Овощи', 'Специи', 'Добавки и консерванты', 'Лекарства', 'Другое'];
+var GROUPS = ['Цикл', 'Самочувствие', 'Тело', 'Питание и лекарства', 'Заметки', 'Мои поля'];
+
+var BUILTIN = [
+  { key: 'flow', g: 'Цикл', label: 'Месячные: интенсивность', type: 'choice', options: ['мазня', 'слабые', 'средние', 'обильные'], cycle: true, on: true },
+  { key: 'discharge', g: 'Цикл', label: 'Выделения', type: 'choice', options: ['сухо', 'кремовые', 'водянистые', 'как яичный белок', 'липкие'], cycle: true, on: true },
+  { key: 'lh', g: 'Цикл', label: 'Тест на овуляцию (ЛГ)', type: 'choice', options: ['отрицательный', 'бледная полоска', 'положительный'], cycle: true },
+  { key: 'bbt', g: 'Цикл', label: 'Базальная температура', type: 'number', unit: '°C', cycle: true },
+  { key: 'sex', g: 'Цикл', label: 'Близость', type: 'choice', options: ['с защитой', 'без защиты'], cycle: true },
+  { key: 'mood', g: 'Самочувствие', label: 'Настроение', type: 'multi', options: ['спокойно', 'радостно', 'энергично', 'тревожно', 'раздражение', 'грусть', 'апатия', 'плаксивость'], on: true },
+  { key: 'energy', g: 'Самочувствие', label: 'Энергия', type: 'scale', min: 1, max: 5, on: true },
+  { key: 'stress', g: 'Самочувствие', label: 'Стресс', type: 'scale', min: 1, max: 5 },
+  { key: 'pain', g: 'Самочувствие', label: 'Где болит', type: 'multi', options: ['голова', 'живот', 'поясница', 'грудь', 'суставы', 'мышцы', 'таз', 'горло'], on: true },
+  { key: 'painLevel', g: 'Самочувствие', label: 'Сила боли', type: 'scale', min: 0, max: 10, on: true },
+  { key: 'symptoms', g: 'Самочувствие', label: 'Симптомы', type: 'multi', options: ['вздутие', 'тошнота', 'акне', 'отёки', 'слабость', 'головокружение', 'бессонница', 'тяга к сладкому', 'повышенный аппетит'], on: true },
+  { key: 'allergy', g: 'Самочувствие', label: 'Аллергическая реакция', type: 'choice', options: ['нет', 'лёгкая', 'средняя', 'сильная'], on: true },
+  { key: 'sleep', g: 'Тело', label: 'Сон', type: 'number', unit: 'ч', on: true },
+  { key: 'weight', g: 'Тело', label: 'Вес', type: 'number', unit: 'кг', on: true },
+  { key: 'water', g: 'Тело', label: 'Вода', type: 'number', unit: 'л' },
+  { key: 'exercise', g: 'Тело', label: 'Активность', type: 'number', unit: 'мин' },
+  { key: 'foodTags', g: 'Питание и лекарства', label: 'Питание', type: 'multi', options: ['сладкое', 'жирное', 'острое', 'кофе', 'алкоголь', 'фастфуд', 'овощи', 'белок', 'мало ел(а)'], on: true },
+  { key: 'foodNote', g: 'Питание и лекарства', label: 'Что ел(а)', type: 'text' },
+  { key: 'meds', g: 'Питание и лекарства', label: 'Лекарства и добавки', type: 'multi', options: ['контрацептив', 'обезболивающее', 'антигистаминное', 'витамины', 'железо', 'магний'], on: true },
+  { key: 'note', g: 'Заметки', label: 'Заметка', type: 'text', on: true }
+];
+
+/* ====================== helpers ====================== */
+function $(s, el) { return (el || document).querySelector(s); }
+function add(el, c) {
+  if (c == null || c === false) return;
+  if (Array.isArray(c)) { c.forEach(function (x) { add(el, x); }); return; }
+  if (c.nodeType) el.appendChild(c); else el.appendChild(document.createTextNode(String(c)));
+}
+function h(tag, attrs) {
+  var el = document.createElement(tag);
+  if (attrs) for (var k in attrs) {
+    var v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.slice(0, 2) === 'on' && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else if (k === 'value' || k === 'checked' || k === 'disabled') el[k] = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (var i = 2; i < arguments.length; i++) add(el, arguments[i]);
+  return el;
+}
+var SVGNS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs) {
+  var el = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) el.setAttribute(k, attrs[k]);
+  for (var i = 2; i < arguments.length; i++) add(el, arguments[i]);
+  return el;
+}
+function pr(b) { return b ? 'true' : 'false'; }
+function pl(n, a) { n = Math.abs(n); var m = n % 100, l = n % 10; if (m > 10 && m < 20) return a[2]; if (l === 1) return a[0]; if (l > 1 && l < 5) return a[1]; return a[2]; }
+function days(n) { return n + ' ' + pl(n, ['день', 'дня', 'дней']); }
+function rid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function stable(o) {
+  if (Array.isArray(o)) return '[' + o.map(stable).join(',') + ']';
+  if (o && typeof o === 'object') return '{' + Object.keys(o).sort().map(function (k) { return JSON.stringify(k) + ':' + stable(o[k]); }).join(',') + '}';
+  return JSON.stringify(o);
+}
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+function errMsg(e) { return (e && (e.message || e.code)) || 'ошибка'; }
+
+var FM = {
+  long: new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }),
+  dm: new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' }),
+  short: new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }),
+  my: new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
+  stamp: new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+};
+function fd(f, n) { return FM[f].format(new Date(n * 86400000)); }
+function relText(d) {
+  if (d === 0) return 'сегодня';
+  if (d === 1) return 'завтра';
+  if (d === -1) return 'вчера';
+  if (d > 1) return 'через ' + days(d);
+  return days(-d) + ' назад';
+}
+function rangeText(r) { return r.start === r.end ? fd('dm', r.start) : fd('dm', r.start) + ' – ' + fd('dm', r.end); }
+
+/* ====================== state ====================== */
+var t0 = E.todayStr().split('-');
+var S = {
+  mode: 'loading', slow: false, revoked: false,
+  uid: null, me: null, user: null, db: null, assetsNS: null, dlNS: null, refs: {},
+  profile: null, profileLoaded: false, profileDirty: false,
+  days: {}, daysLoaded: false, dirtyDays: {},
+  allergens: [], allergensLoaded: false,
+  shared: {}, sharedLoaded: false,
+  route: 'calendar', lastRoute: null,
+  month: { y: +t0[0], m: +t0[1] - 1 }, sel: E.todayStr(),
+  preview: false, partnerId: null,
+  names: {}, askedNames: {},
+  typing: false, pointer: false, dirty: false,
+  sheet: null, lightbox: null,
+  aq: '', asev: 0, checkOpen: false, checkText: '',
+  save: '', newStart: '', nf: { label: '', type: 'multi', unit: '', opts: '', max: '5' }
+};
+var chains = {}, dayTimers = {}, toastT = null;
+
+/* ====================== profile / fields ====================== */
+function allFields() {
+  var p = S.profile || {};
+  var cfg = p.fieldCfg || {};
+  var out = BUILTIN.map(function (b) {
+    var c = cfg[b.key] || {};
+    return { key: b.key, g: b.g, label: c.label || b.label, type: b.type, unit: b.unit, min: b.min, max: b.max,
+      options: c.options || b.options || [], cycle: !!b.cycle, builtin: true,
+      enabled: c.enabled != null ? c.enabled : !!b.on, share: !!c.share };
+  });
+  (p.custom || []).forEach(function (f) {
+    out.push({ key: f.key, g: 'Мои поля', label: f.label, type: f.type, unit: f.unit, min: f.min, max: f.max,
+      options: f.options || [], cycle: false, builtin: false, enabled: f.enabled !== false, share: !!f.share });
+  });
+  return out;
+}
+function activeFields() {
+  var role = S.profile && S.profile.role;
+  return allFields().filter(function (f) { return f.enabled && !(f.cycle && role !== 'tracker'); });
+}
+
+/* ====================== writes ====================== */
+function enqueue(key, fn) {
+  var p = (chains[key] || Promise.resolve()).then(fn, fn);
+  chains[key] = p.catch(function () {});
+  return p;
+}
+function setStatus(text) {
+  S.save = text;
+  var el = $('#status'); if (el) el.textContent = text;
+  clearTimeout(S.stT);
+  if (text === 'Сохранено') S.stT = setTimeout(function () { setStatus(''); }, 2500);
+}
+function saveProfile(patch, quiet) {
+  S.profile = Object.assign({}, S.profile, patch);
+  S.profileDirty = true;
+  setStatus('Сохраняю…');
+  clearTimeout(S.pTimer);
+  S.pTimer = setTimeout(flushProfile, 450);
+  if (!quiet) render(true);
+}
+function flushProfile() {
+  clearTimeout(S.pTimer);
+  if (!S.profileDirty) return;
+  if (!S.db || !S.refs.profile) { S.profileDirty = false; return; }
+  var body = clone(S.profile);
+  enqueue('profile', function () {
+    return S.refs.profile.set(body).then(function () {
+      if (stable(clone(S.profile)) === stable(body)) S.profileDirty = false;
+      setStatus('Сохранено');
+      scheduleSync();
+    }).catch(function (e) { setStatus('Ошибка сохранения'); toast('Не удалось сохранить: ' + errMsg(e), true); });
+  });
+}
+function setVal(date, key, v, quiet) {
+  var cur = S.days[date] && S.days[date].values ? S.days[date].values : {};
+  var vals = Object.assign({}, cur);
+  if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete vals[key]; else vals[key] = v;
+  if (Object.keys(vals).length) S.days[date] = { values: vals, ts: Date.now() }; else delete S.days[date];
+  S.dirtyDays[date] = true;
+  setStatus('Сохраняю…');
+  clearTimeout(dayTimers[date]);
+  dayTimers[date] = setTimeout(function () { flushDay(date); }, quiet ? 700 : 150);
+  if (!quiet) render(true);
+}
+function flushDay(date) {
+  clearTimeout(dayTimers[date]); delete dayTimers[date];
+  if (!S.dirtyDays[date]) return;
+  if (!S.db || !S.refs.profile) { delete S.dirtyDays[date]; return; }
+  var d = S.days[date];
+  var has = !!(d && d.values && Object.keys(d.values).length);
+  var vals = has ? clone(d.values) : null;
+  var ref = S.refs.profile.collection('days').doc(date);
+  enqueue('day:' + date, function () {
+    var op = has ? ref.set({ values: vals, ts: Date.now() }) : ref.delete();
+    return op.then(function () {
+      var c = S.days[date]; var ch = !!(c && c.values && Object.keys(c.values).length);
+      if ((has && ch && stable(c.values) === stable(vals)) || (!has && !ch)) delete S.dirtyDays[date];
+      setStatus('Сохранено');
+      scheduleSync();
+    }).catch(function (e) { setStatus('Ошибка сохранения'); toast('Не удалось сохранить запись: ' + errMsg(e), true); });
+  });
+}
+function flushAll() { flushProfile(); Object.keys(dayTimers).forEach(flushDay); }
+
+function writeAllergen(id, body) {
+  var i = S.allergens.findIndex(function (a) { return a.id === id; });
+  var local = Object.assign({ id: id }, body);
+  if (i >= 0) S.allergens[i] = local; else S.allergens.push(local);
+  if (!S.db) return Promise.resolve();
+  return enqueue('al:' + id, function () { return S.db.doc('allergens/' + id).set(body); });
+}
+function removeAllergen(id) {
+  S.allergens = S.allergens.filter(function (a) { return a.id !== id; });
+  if (!S.db) return Promise.resolve();
+  return enqueue('al:' + id, function () { return S.db.doc('allergens/' + id).delete(); });
+}
+
+/* ====================== models ====================== */
+function ownModel() {
+  var p = S.profile || {};
+  var cfg = E.cfgOf(p.cycle);
+  var t = E.toNum(E.todayStr());
+  var cycles = E.buildCycles(cfg, p.starts || [], p.ovul || {}, p.ends || {}, t + 460);
+  var names = Object.assign({}, DEFAULT_NAMES, (p.cycle && p.cycle.names) || {});
+  var defs = allFields();
+  return {
+    kind: 'own', todayN: t, cfg: cfg, cycles: cycles, names: names,
+    perms: { phase: 1, period: 1, ovulation: 1, fertile: 1, pms: 1 },
+    getInfo: function (n) { return E.infoAt(cycles, n, t); },
+    status: E.status(cycles, t),
+    marks: function (d) {
+      var v = S.days[d] && S.days[d].values;
+      return { logged: !!(v && Object.keys(v).length), react: !!(v && v.allergy && v.allergy !== 'нет') };
+    },
+    fieldsDef: defs,
+    dayValues: function (d) { return S.days[d] && S.days[d].values ? S.days[d].values : null; }
+  };
+}
+function partnerModel(proj, ownerId, preview) {
+  var t = E.toNum(E.todayStr());
+  return {
+    kind: 'partner', preview: !!preview, ownerId: ownerId, todayN: t,
+    names: Object.assign({}, DEFAULT_NAMES, proj.names || {}),
+    perms: proj.perms || {},
+    getInfo: function (n) {
+      var e = proj.cal && proj.cal[E.fromNum(n)];
+      return e ? { phase: e.ph, cycleDay: e.d, period: e.per || null, ov: e.ov || null, fw: !!e.fw, pms: !!e.pms } : null;
+    },
+    status: null,
+    marks: function (d) {
+      var v = proj.days && proj.days[d];
+      return { logged: !!v, react: !!(v && v.allergy && v.allergy !== 'нет') };
+    },
+    fieldsDef: proj.fields || [],
+    dayValues: function (d) { return (proj.days && proj.days[d]) || null; },
+    updatedAt: proj.updatedAt
+  };
+}
+function partnerSources() {
+  return Object.keys(S.shared).filter(function (id) { return id !== S.uid && S.shared[id] && S.shared[id].enabled; });
+}
+
+/* ====================== partner projection ====================== */
+// То, что уходит в общую копию. Приватные записи остаются в личной зоне.
+function buildProjection() {
+  var m = ownModel(), t = m.todayN, perms = (S.profile && S.profile.perms) || {};
+  var cal = {};
+  for (var n = t - 45; n <= t + 120; n++) {
+    var i = m.getInfo(n); if (!i) continue;
+    var e = {};
+    if (perms.phase) { e.ph = i.phase; e.d = i.cycleDay; }
+    if (perms.period && i.period) e.per = i.period;
+    if (perms.ovulation && i.ov) e.ov = i.ov;
+    if (perms.fertile && i.fw) e.fw = 1;
+    if (perms.pms && i.pms) e.pms = 1;
+    for (var k in e) { cal[E.fromNum(n)] = e; break; }
+  }
+  var shared = allFields().filter(function (f) { return f.enabled && f.share; });
+  var keys = shared.map(function (f) { return f.key; });
+  var dd = {}, from = t - 180;
+  Object.keys(S.days).forEach(function (d) {
+    if (E.toNum(d) < from) return;
+    var vals = S.days[d].values || {}, o = {};
+    keys.forEach(function (k) { if (vals[k] != null) o[k] = vals[k]; });
+    if (Object.keys(o).length) dd[d] = o;
+  });
+  return clone({
+    v: 1, enabled: true,
+    perms: { phase: !!perms.phase, period: !!perms.period, ovulation: !!perms.ovulation, fertile: !!perms.fertile, pms: !!perms.pms },
+    names: perms.phase ? m.names : {},
+    cal: cal,
+    fields: shared.map(function (f) { return { key: f.key, label: f.label, type: f.type, unit: f.unit || null, min: f.min == null ? null : f.min, max: f.max == null ? null : f.max }; }),
+    days: dd
+  });
+}
+function scheduleSync() { clearTimeout(S.syncT); S.syncT = setTimeout(syncShared, 1200); }
+function maybeSync() { if (S.profileLoaded && S.daysLoaded && S.sharedLoaded) scheduleSync(); }
+function syncShared() {
+  if (!S.db || !S.uid || !S.profile || !S.sharedLoaded) return;
+  var cur = S.shared[S.uid], proj;
+  if (S.profile.role === 'tracker' && S.profile.shareOn) proj = buildProjection();
+  else { if (!cur || cur.enabled === false) return; proj = { v: 1, enabled: false }; }
+  var sig = stable(Object.assign({}, proj, { updatedAt: 0 }));
+  var curSig = cur ? stable(Object.assign({}, clone(cur), { updatedAt: 0 })) : null;
+  if (sig === curSig) return;
+  proj.updatedAt = new Date().toISOString();
+  S.shared[S.uid] = proj;
+  enqueue('shared', function () {
+    return S.db.doc('shared/' + S.uid).set(proj).catch(function (e) { toast('Не удалось обновить доступ партнёра: ' + errMsg(e), true); });
+  });
+}
+
+/* ====================== names ====================== */
+function wantNames(ids) {
+  if (!S.user) return;
+  var need = ids.filter(function (i) { return i && !S.askedNames[i]; });
+  if (!need.length) return;
+  need.forEach(function (i) { S.askedNames[i] = 1; });
+  S.user.profiles(need).then(function (ps) {
+    Object.keys(ps).forEach(function (k) { S.names[k] = ps[k].name || ''; });
+    render();
+  }).catch(function () {});
+}
+function nameOf(id) { return id === S.uid ? 'ты' : (S.names[id] || 'партнёр'); }
+
+/* ====================== toast ====================== */
+function toast(msg, err) {
+  var el = $('#toast'); if (!el) return;
+  el.textContent = msg; el.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastT);
+  toastT = setTimeout(function () { el.className = 'toast'; }, 4000);
+}
+
+/* ====================== render core ====================== */
+function btn(text, fn, cls, attrs) {
+  var a = { type: 'button', 'class': cls || 'btn', text: text, onclick: fn };
+  if (attrs) for (var k in attrs) a[k] = attrs[k];
+  return h('button', a);
+}
+function render(force) {
+  if (!force && (S.typing || S.pointer)) { S.dirty = true; return; }
+  S.dirty = false;
+  var root = $('#app'); if (!root) return;
+  var ae = document.activeElement, fid = ae && ae.id, sel = null;
+  if (fid) { try { sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) { sel = null; } }
+  var shEl = $('.sheet'), shTop = shEl ? shEl.scrollTop : 0;
+  var sy = window.scrollY;
+  applyPhaseTheme(appPhase());
+  root.textContent = '';
+  root.appendChild(viewApp());
+  if (S.lastRoute !== S.route) { window.scrollTo(0, 0); S.lastRoute = S.route; } else window.scrollTo(0, sy);
+  var sh = $('.sheet'); if (sh) sh.scrollTop = shTop;
+  if (fid) {
+    var el = document.getElementById(fid);
+    if (el) { try { el.focus({ preventScroll: true }); if (sel && sel[0] != null) el.setSelectionRange(sel[0], sel[1]); } catch (e) {} }
+  }
+}
+function flushDirty() { if (S.dirty && !S.typing && !S.pointer) render(); }
+function go(route) {
+  flushAll();
+  S.route = route; S.demoPhase = '';
+  try { if (location.hash !== '#' + route) location.hash = '#' + route; } catch (e) {}
+  render(true);
+}
+function selectDate(d) {
+  S.sel = d;
+  var p = d.split('-'); S.month = { y: +p[0], m: +p[1] - 1 };
+  render(true);
+}
+function shiftMonth(delta) {
+  var m = S.month.m + delta, y = S.month.y;
+  while (m < 0) { m += 12; y--; }
+  while (m > 11) { m -= 12; y++; }
+  S.month = { y: y, m: m }; render(true);
+}
+
+/* ====================== shell ====================== */
+function logo() {
+  var s = sv('svg', { viewBox: '0 0 32 32', 'aria-hidden': 'true' });
+  var C = 2 * Math.PI * 12, seg = C / 4;
+  ['--period', '--line', '--ovul', '--pms'].forEach(function (c, i) {
+    s.appendChild(sv('circle', { cx: 16, cy: 16, r: 12, fill: 'none', 'stroke-width': 6,
+      'stroke-dasharray': (seg - 2.6) + ' ' + (C - seg + 2.6), 'stroke-dashoffset': -i * seg,
+      transform: 'rotate(-90 16 16)', style: 'stroke:var(' + c + ')' }));
+  });
+  return s;
+}
+function viewHeader() {
+  var role = S.profile && S.profile.role;
+  var top = h('header', { class: 'top' });
+  var who = h('div', { class: 'who' }, h('span', { id: 'status', 'aria-live': 'polite', text: S.save || '' }));
+  if (S.me && S.mode === 'live') {
+    who.appendChild(h('img', { src: S.me.avatarUrl, alt: '', width: '26', height: '26' }));
+    who.appendChild(h('span', { class: 'nm', text: (S.me.name || 'ты') + (role ? ' · ' + (role === 'tracker' ? 'ведёт цикл' : 'партнёр') : '') }));
+  }
+  top.appendChild(h('div', { class: 'top-row' },
+    h('div', { class: 'brand' }, logo(), h('span', { class: 'brand-name', text: 'Цикл на двоих' })), who));
+  return top;
+}
+function viewBanner() {
+  if (S.mode === 'demo') return h('div', { class: 'banner', role: 'status', text: 'Демо-режим: хранилище недоступно (нет входа или доступа к странице). Всё работает, но записи не сохраняются.' });
+  if (S.revoked) return h('div', { class: 'banner err', role: 'status', text: 'Доступ к странице отозван. Новые записи сохраняться не будут.' });
+  if (S.slow && !S.profileLoaded) return h('div', { class: 'banner', role: 'status', text: 'Хранилище пока не отвечает. Проверь соединение: данные подтянутся сами.' });
+  return null;
+}
+function viewLoading() {
+  return h('div', { class: 'stack', 'aria-busy': 'true' }, h('p', { class: 'muted', text: 'Загружаю данные…' }), h('div', { class: 'skeleton' }), h('div', { class: 'skeleton' }));
+}
+function viewRolePicker() {
+  function card(role, title, text) {
+    return h('button', { type: 'button', class: 'role-card', onclick: function () { saveProfile({ role: role }); } }, h('b', { text: title }), h('span', { text: text }));
+  }
+  return h('section', { class: 'hello' },
+    h('h1', { text: 'Кто ты в этой паре?' }),
+    h('p', { class: 'lead', text: 'Роль можно сменить в настройках. Записи приватны: другой человек видит только то, что откроет ведущая цикл.' }),
+    h('div', { class: 'role-grid' },
+      card('tracker', 'Я веду цикл', 'Календарь с твоими параметрами и дневник. Ты сама решаешь, что видит партнёр.'),
+      card('partner', 'Я партнёр', 'Видишь фазу и события, которые откроет она. Свой дневник и общий список аллергенов тоже доступны.')));
+}
+function viewFooter() {
+  return h('footer', { class: 'foot', text: 'Прогнозы считаются по параметрам, которые ты задала сама. Это не медицинская рекомендация и не метод контрацепции. Список аллергенов помогает не забыть, но не заменяет чтение состава и совет врача.' });
+}
+
+/* ====================== calendar ====================== */
+function viewFirstStart() {
+  var val = S.newStart || E.todayStr();
+  return h('section', { class: 'hello' },
+    h('h1', { text: 'Когда начались последние месячные?' }),
+    h('p', { class: 'lead', text: 'От этой даты считается весь прогноз. Остальные циклы можно добавить позже, и расчёт станет точнее.' }),
+    h('div', { class: 'card' },
+      h('div', null, h('label', { class: 'lbl', 'for': 'fs-date', text: 'Первый день последних месячных' }),
+        h('input', { id: 'fs-date', type: 'date', class: 'inp', style: 'max-width:220px', value: val, max: E.todayStr(), oninput: function () { S.newStart = this.value; } })),
+      h('div', { class: 'btn-row' },
+        btn('Сохранить дату', function () { var v = S.newStart || E.todayStr(); if (/^\d{4}-\d{2}-\d{2}$/.test(v)) { S.newStart = ''; saveProfile({ starts: [v] }); } }, 'btn btn-primary'),
+        btn('Сначала настроить параметры', function () { go('setup'); }, 'btn'))));
+}
+function viewNoShare() {
+  var steps = h('ol', { class: 'lead', style: 'margin:0;padding-left:20px;display:grid;gap:6px' },
+    h('li', { text: 'Партнёрша открывает «Настройки» и находит раздел «Доступ партнёра».' }),
+    h('li', { text: 'Включает доступ и отмечает, что именно показывать: фазу, овуляцию, фертильное окно, ПМС и любые поля дневника.' }),
+    h('li', { text: 'Здесь появится её календарь только с теми слоями, которые она открыла.' }));
+  return h('section', { class: 'hello' },
+    h('h1', { text: 'Пока нечего показывать' }),
+    h('p', { class: 'lead', text: 'Партнёрша ещё не открыла доступ к своему циклу. Пока она не включит его, здесь пусто, и это её выбор.' }),
+    h('div', { class: 'card' }, h('h2', { text: 'Как это включается' }), steps),
+    joinCard(),
+    h('div', { class: 'btn-row' }, btn('Открыть общий список аллергенов', function () { go('allergens'); }, 'btn')));
+}
+function viewCalendar() {
+  var role = S.profile.role, model;
+  if (role === 'tracker') {
+    if (S.preview && S.profile.shareOn) model = partnerModel(buildProjection(), S.uid, true);
+    else {
+      S.preview = false;
+      if (!(S.profile.starts || []).length) return viewFirstStart();
+      model = ownModel();
+    }
+  } else {
+    var src = partnerSources();
+    if (!src.length) return viewNoShare();
+    if (src.indexOf(S.partnerId) < 0) S.partnerId = src[0];
+    model = partnerModel(S.shared[S.partnerId], S.partnerId, false);
+  }
+  var sec = h('section', { class: 'stack' });
+  if (role === 'tracker' && S.profile.shareOn) {
+    sec.appendChild(h('div', { class: 'seg', role: 'group', 'aria-label': 'Вид календаря' },
+      btn('Мой вид', function () { S.preview = false; render(true); }, null, { 'aria-pressed': pr(!S.preview) }),
+      btn('Глазами партнёра', function () { S.preview = true; render(true); }, null, { 'aria-pressed': pr(S.preview) })));
+  }
+  if (model.preview) sec.appendChild(h('p', { class: 'who-note', text: 'Так видит календарь партнёр. Настроить это можно в «Настройках», раздел «Доступ партнёра».' }));
+  if (model.kind === 'partner' && !model.preview) {
+    var src2 = partnerSources();
+    wantNames(src2);
+    var note = 'Данные от: ' + (S.names[S.partnerId] || 'партнёрша') + (model.updatedAt ? ' · обновлено ' + FM.stamp.format(new Date(model.updatedAt)) : '');
+    sec.appendChild(h('p', { class: 'who-note', text: note }));
+    if (src2.length > 1) {
+      var sel = h('select', { id: 'pick-src', class: 'sel', style: 'max-width:280px', 'aria-label': 'Чей календарь', onchange: function () { S.partnerId = this.value; render(true); } });
+      src2.forEach(function (id) { var o = h('option', { value: id, text: S.names[id] || 'Партнёрша ' + (src2.indexOf(id) + 1) }); if (id === S.partnerId) o.selected = true; sel.appendChild(o); });
+      sec.appendChild(sel);
+    }
+  }
+  sec.appendChild(viewStage(model));
+  sec.appendChild(h('div', { class: 'cal-layout' },
+    h('div', { class: 'col-a' }, viewCalCard(model), viewLegend(model)),
+    h('div', { class: 'col-b' }, viewDayPanel(model), viewUpcoming(model))));
+  return sec;
+}
+
+function toggleStart(date) {
+  var s = (S.profile.starts || []).slice(), i = s.indexOf(date);
+  if (i >= 0) s.splice(i, 1); else s.push(date);
+  s.sort();
+  saveProfile({ starts: s });
+}
+function toggleMap(field, cycleStartIso, date) {
+  var m = Object.assign({}, S.profile[field] || {});
+  if (m[cycleStartIso] === date) delete m[cycleStartIso]; else m[cycleStartIso] = date;
+  var patch = {}; patch[field] = m; saveProfile(patch);
+}
+
+function viewRibbon(rb, model) {
+  var bar = h('div', { class: 'ribbon', role: 'img', 'aria-label': 'Фазы текущего цикла, сегодня день ' + rb.day + ' из ' + rb.total });
+  rb.segs.forEach(function (s) {
+    var el = h('div', { class: 'seg-p seg-' + s.ph, title: model.names[s.ph] + ': ' + days(s.len), text: s.ph === 'O' ? '' : model.names[s.ph] });
+    el.style.flexGrow = s.len; bar.appendChild(el);
+  });
+  var now = h('div', { class: 'ribbon-now' }); now.style.left = ((rb.day - 0.5) / rb.total * 100) + '%'; bar.appendChild(now);
+  var wrap = h('div', { class: 'ribbon-wrap' }, bar);
+  var cap2 = 'день ' + rb.total;
+  if (model.perms.fertile && rb.fw) {
+    var strip = h('div', { class: 'ribbon-fw' }), i = h('i');
+    i.style.left = ((rb.fw.from - rb.start) / rb.total * 100) + '%';
+    i.style.width = ((rb.fw.to - rb.fw.from + 1) / rb.total * 100) + '%';
+    strip.appendChild(i); wrap.appendChild(strip);
+  }
+  wrap.appendChild(h('div', { class: 'ribbon-cap' }, h('span', { text: 'день 1' }),
+    h('span', { text: model.perms.fertile && rb.fw ? 'зелёная полоса: фертильное окно' : '' }), h('span', { text: cap2 })));
+  return wrap;
+}
+
+function flagTags(info, model) {
+  var box = h('div', { class: 'chips' });
+  if (!info) return box;
+  if (info.cycleDay != null) box.appendChild(h('span', { class: 'tag', text: 'день ' + info.cycleDay + ' цикла' }));
+  if (info.phase) box.appendChild(h('span', { class: 'tag tag-ph-' + info.phase, text: model.names[info.phase] }));
+  if (info.period) box.appendChild(h('span', { class: 'tag tag-ph-M', text: info.period === 'a' ? 'месячные' : 'месячные по прогнозу' }));
+  if (info.ov) box.appendChild(h('span', { class: 'tag tag-ph-O', text: info.ov === 'a' ? 'овуляция отмечена' : 'овуляция по расчёту' }));
+  if (info.fw) box.appendChild(h('span', { class: 'tag tag-share', text: 'фертильное окно' }));
+  if (info.pms) box.appendChild(h('span', { class: 'tag tag-ph-L', text: 'ПМС' }));
+  return box;
+}
+
+function viewUpcoming(model) {
+  var t = model.todayN, p = model.perms, cards = [];
+  function card(cls, label, main, rel) {
+    return h('div', { class: 'up ' + cls }, h('div', { class: 'eyebrow', text: label }), h('div', { class: 'big nums', text: main }), h('div', { class: 'rel', text: rel }));
+  }
+  function relOf(r) { return r.now ? 'идёт сейчас, до ' + fd('dm', r.end) : relText(r.start - t); }
+  if (p.period) { var a = E.firstRun(model.getInfo, 'period', t, 150); if (a) cards.push(card('up-period', 'Месячные', rangeText(a), relOf(a))); }
+  if (p.ovulation) { var b = E.firstRun(model.getInfo, 'ov', t, 150); if (b) { var bi = model.getInfo(b.start); cards.push(card('up-ov', 'Овуляция', rangeText(b), relOf(b) + (bi && bi.ov === 'a' ? ', отмечена' : ', по расчёту'))); } }
+  if (p.fertile) { var c = E.firstRun(model.getInfo, 'fw', t, 150); if (c) cards.push(card('up-fw', 'Фертильное окно', rangeText(c), relOf(c))); }
+  if (p.pms) { var d = E.firstRun(model.getInfo, 'pms', t, 150); if (d) cards.push(card('up-pms', 'ПМС', rangeText(d), relOf(d))); }
+  if (!cards.length) return null;
+  return h('section', { class: 'card upcard' }, h('h2', { text: 'Ближайшие события' }), h('div', { class: 'up-grid' }, cards));
+}
+
+function describeDay(date, n, info, mk, model) {
+  var parts = [fd('dm', n)];
+  if (info) {
+    if (info.cycleDay != null) parts.push('день цикла ' + info.cycleDay);
+    if (info.period) parts.push(info.period === 'a' ? 'месячные' : 'месячные по прогнозу');
+    if (info.ov) parts.push(info.ov === 'a' ? 'овуляция отмечена' : 'овуляция по расчёту');
+    if (info.fw) parts.push('фертильное окно');
+    if (info.pms) parts.push('ПМС');
+  }
+  if (mk.logged) parts.push('есть запись');
+  if (mk.react) parts.push('аллергическая реакция');
+  if (n === model.todayN) parts.push('сегодня');
+  return parts.join(', ');
+}
+function viewCalCard(model) {
+  var y = S.month.y, m = S.month.m, t = model.todayN;
+  var first = E.dayNum(y, m, 1), dim = E.dayNum(y, m + 1, 1) - first, offset = (first + 3) % 7;
+  var total = Math.ceil((offset + dim) / 7) * 7;
+  var card = h('section', { class: 'card calcard', 'aria-label': 'Календарь' });
+  card.appendChild(h('div', { class: 'calhead' },
+    h('h2', { class: 'display', text: FM.my.format(new Date(first * 86400000)).replace(/\s*г\.$/, '') }),
+    h('div', { class: 'calnav' },
+      btn('‹', function () { shiftMonth(-1); }, 'btn', { 'aria-label': 'Предыдущий месяц' }),
+      btn('Сегодня', function () { selectDate(E.todayStr()); }, 'btn'),
+      btn('›', function () { shiftMonth(1); }, 'btn', { 'aria-label': 'Следующий месяц' }))));
+  var grid = h('div', { class: 'cal' });
+  ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].forEach(function (d) { grid.appendChild(h('div', { class: 'dow', text: d })); });
+  for (var i = 0; i < total; i++) {
+    (function (n) {
+      var date = E.fromNum(n), info = model.getInfo(n), mk = model.marks(date);
+      var c = ['day'];
+      if (n < first || n >= first + dim) c.push('out');
+      if (info) {
+        if (info.period === 'a') c.push('per'); else if (info.period === 'p') c.push('perp');
+        if (info.fw) c.push('fw');
+        if (info.ov === 'a') c.push('ov'); else if (info.ov === 'p') c.push('ovp');
+        if (info.pms) c.push('pms');
+      }
+      if (n === t) c.push('today');
+      if (date === S.sel) c.push('sel');
+      var cell = h('button', { type: 'button', class: c.join(' '), 'aria-label': describeDay(date, n, info, mk, model), 'aria-pressed': pr(date === S.sel), onclick: function () { selectDate(date); } },
+        h('span', { class: 'n', text: String(+date.slice(8)) }));
+      if (mk.logged) cell.appendChild(h('i', { class: 'dot' }));
+      if (mk.react) cell.appendChild(h('b', { class: 'react' }));
+      grid.appendChild(cell);
+    })(first - offset + i);
+  }
+  card.appendChild(grid);
+  return card;
+}
+
+function viewLegend(model) {
+  var p = model.perms;
+  var items = [
+    { c: 'per', t: 'Месячные', d: 'Залитая клетка: дни уже отмечены или идут сейчас', show: p.period },
+    { c: 'perp', t: 'Месячные по прогнозу', d: 'Штриховка и пунктир: ещё не наступили', show: p.period },
+    { c: 'ov', t: 'Овуляция отмечена', d: 'Залитый круг: день подтверждён вручную', show: p.ovulation },
+    { c: 'ovp', t: 'Овуляция по расчёту', d: 'Контур круга: прогноз по заданным параметрам', show: p.ovulation },
+    { c: 'fw', t: 'Фертильное окно', d: 'Подсветка клетки и зелёная полоса снизу', show: p.fertile },
+    { c: 'pms', t: 'ПМС', d: 'Фиолетовая полоса сверху', show: p.pms },
+    { c: 'today', t: 'Сегодня', d: 'Тёмная рамка вокруг клетки', show: true },
+    { c: 'logged', t: 'Есть запись', d: 'Точка в правом углу: в дневнике что-то отмечено', show: true },
+    { c: 'react', t: 'Аллергическая реакция', d: 'Красный квадрат в левом углу', show: true }
+  ];
+  var lg = h('div', { class: 'lg' });
+  items.forEach(function (it) {
+    if (!it.show) return;
+    var sw = h('span', { class: 'day ' + (it.c === 'logged' || it.c === 'react' ? '' : it.c), 'aria-hidden': 'true' }, h('span', { class: 'n', text: '12' }));
+    if (it.c === 'logged') sw.appendChild(h('i', { class: 'dot' }));
+    if (it.c === 'react') sw.appendChild(h('b', { class: 'react' }));
+    lg.appendChild(h('div', { class: 'lg-item' }, sw, h('div', null, h('b', { text: it.t }), h('span', { class: 'd', text: it.d }))));
+  });
+  return h('section', { class: 'card legend', 'aria-label': 'Легенда' }, h('h2', { text: 'Легенда' }), lg);
+}
+
+function fmtVal(f, v) {
+  if (Array.isArray(v)) return v.join(', ');
+  if (f.type === 'number') return String(v).replace('.', ',') + (f.unit ? ' ' + f.unit : '');
+  if (f.type === 'scale') return v + ' из ' + (f.max || 5);
+  if (f.type === 'bool') return 'да';
+  return String(v);
+}
+function viewDayPanel(model) {
+  var date = S.sel, n = E.toNum(date), t = model.todayN, info = model.getInfo(n);
+  var box = h('section', { class: 'card daypanel', 'aria-labelledby': 'dp-title' });
+  box.appendChild(h('div', { class: 'eyebrow', text: n === t ? 'Сегодня' : (n < t ? 'Прошедший день' : 'Впереди') }));
+  box.appendChild(h('h2', { id: 'dp-title', text: cap(fd('long', n)) }));
+  var tags = flagTags(info, model);
+  box.appendChild(tags.childNodes.length ? tags : h('p', { class: 'muted small', text: model.kind === 'own' ? 'Для этой даты нет данных цикла.' : 'Для этой даты ничего не открыто.' }));
+  var vals = model.dayValues(date), rows = [];
+  if (vals) model.fieldsDef.forEach(function (f) { if (vals[f.key] != null) rows.push(h('div', null, h('dt', { text: f.label }), h('dd', { text: fmtVal(f, vals[f.key]) }))); });
+  if (rows.length) box.appendChild(h('dl', { class: 'dl' }, rows));
+  else if (model.kind === 'own') box.appendChild(h('p', { class: 'muted small', text: 'В дневнике за этот день пока пусто.' }));
+  else box.appendChild(h('p', { class: 'muted small', text: 'Открытых записей за этот день нет.' }));
+  if (model.kind === 'own') {
+    var acts = h('div', { class: 'btn-row' }), starts = S.profile.starts || [];
+    if (n <= t) acts.appendChild(btn(starts.indexOf(date) >= 0 ? 'Убрать начало месячных' : 'Месячные начались в этот день', function () { toggleStart(date); }, 'btn btn-sm'));
+    if (info && info.kind !== 'pred' && n <= t) {
+      var cs = E.fromNum(info.start);
+      if (info.cycleDay <= 14) acts.appendChild(btn((S.profile.ends || {})[cs] === date ? 'Убрать конец месячных' : 'Месячные закончились в этот день', function () { toggleMap('ends', cs, date); }, 'btn btn-sm'));
+      acts.appendChild(btn((S.profile.ovul || {})[cs] === date ? 'Убрать отметку овуляции' : 'Овуляция была в этот день', function () { toggleMap('ovul', cs, date); }, 'btn btn-sm'));
+    }
+    acts.appendChild(btn('Открыть дневник', function () { go('diary'); }, 'btn btn-sm btn-primary'));
+    box.appendChild(acts);
+  }
+  return box;
+}
+
+/* ====================== diary ====================== */
+function parseNum(s) {
+  s = String(s).replace(',', '.').trim();
+  if (s === '') return null;
+  var x = parseFloat(s);
+  return isNaN(x) ? null : x;
+}
+function addCustomOption(f, date, text) {
+  if (f.options.indexOf(text) < 0) setFieldCfg(f, { options: f.options.concat(text) });
+  var cur = S.days[date] && S.days[date].values && S.days[date].values[f.key];
+  var arr = Array.isArray(cur) ? cur.slice() : [];
+  if (arr.indexOf(text) < 0) arr.push(text);
+  setVal(date, f.key, arr);
+}
+function fieldBlock(f, date, vals, tracker) {
+  var v = vals[f.key];
+  var head = h('div', { class: 'fhead' }, h('span', { class: 'flabel', text: f.label + (f.unit ? ', ' + f.unit : '') }));
+  if (tracker && S.profile.shareOn) head.appendChild(h('span', { class: 'tag ' + (f.share ? 'tag-share' : 'tag-priv'), text: f.share ? 'видит партнёр' : 'приватно' }));
+  var ctl;
+  if (f.type === 'scale') {
+    ctl = h('div', { class: 'scale', role: 'group', 'aria-label': f.label });
+    for (var i = (f.min == null ? 1 : f.min); i <= (f.max || 5); i++) (function (i) {
+      ctl.appendChild(btn(String(i), function () { setVal(date, f.key, v === i ? null : i); }, 'sc' + (v === i ? ' on' : ''), { 'aria-pressed': pr(v === i) }));
+    })(i);
+  } else if (f.type === 'number') {
+    ctl = h('input', { id: 'fi-' + f.key, type: 'text', inputmode: 'decimal', autocomplete: 'off', class: 'inp num', placeholder: '—', 'aria-label': f.label,
+      value: v != null ? String(v).replace('.', ',') : '', oninput: function () { setVal(date, f.key, parseNum(this.value), true); } });
+  } else if (f.type === 'text') {
+    ctl = h('textarea', { id: 'fi-' + f.key, class: 'ta', rows: '2', 'aria-label': f.label, value: v || '', oninput: function () { setVal(date, f.key, this.value.trim() ? this.value : null, true); } });
+  } else if (f.type === 'choice') {
+    ctl = h('div', { class: 'chips', role: 'group', 'aria-label': f.label });
+    f.options.forEach(function (o) { ctl.appendChild(btn(o, function () { setVal(date, f.key, v === o ? null : o); }, 'chip' + (v === o ? ' on' : ''), { 'aria-pressed': pr(v === o) })); });
+  } else {
+    var cur = Array.isArray(v) ? v : [], opts = f.options.slice();
+    cur.forEach(function (x) { if (opts.indexOf(x) < 0) opts.push(x); });
+    var chips = h('div', { class: 'chips', role: 'group', 'aria-label': f.label });
+    opts.forEach(function (o) {
+      var on = cur.indexOf(o) >= 0;
+      chips.appendChild(btn(o, function () { setVal(date, f.key, on ? cur.filter(function (x) { return x !== o; }) : cur.concat(o)); }, 'chip' + (on ? ' on' : ''), { 'aria-pressed': pr(on) }));
+    });
+    var doAdd = function () { var el = document.getElementById('ao-' + f.key), tx = el ? el.value.trim() : ''; if (tx) addCustomOption(f, date, tx); };
+    ctl = h('div', { class: 'stack', style: 'gap:10px' }, chips,
+      h('div', { class: 'addopt' },
+        h('input', { id: 'ao-' + f.key, type: 'text', class: 'inp', placeholder: 'Свой вариант…', 'aria-label': 'Добавить свой вариант: ' + f.label, onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } } }),
+        btn('Добавить', doAdd, 'btn btn-sm')));
+  }
+  return h('div', { class: 'field' }, head, ctl);
+}
+function viewDiary() {
+  var date = S.sel, n = E.toNum(date), tracker = S.profile.role === 'tracker';
+  var sec = h('section', { class: 'stack' });
+  sec.appendChild(h('div', { class: 'eyebrow', text: tracker ? 'Дневник' : 'Мой дневник' }));
+  sec.appendChild(h('div', { class: 'datenav' },
+    btn('‹', function () { selectDate(E.fromNum(n - 1)); }, 'btn', { 'aria-label': 'Предыдущий день' }),
+    h('h2', { class: 'display', text: cap(fd('long', n)) }),
+    btn('›', function () { selectDate(E.fromNum(n + 1)); }, 'btn', { 'aria-label': 'Следующий день' }),
+    btn('Сегодня', function () { selectDate(E.todayStr()); }, 'btn btn-sm'),
+    h('input', { id: 'dj-date', type: 'date', class: 'inp', style: 'max-width:170px', value: date, 'aria-label': 'Перейти к дате', onchange: function () { if (this.value) selectDate(this.value); } })));
+  if (tracker && (S.profile.starts || []).length) {
+    var om = ownModel(), oi = om.getInfo(n);
+    if (oi) { var strip = flagTags(oi, om); if (strip.childNodes.length) sec.appendChild(strip); }
+  }
+  var note = !tracker ? 'Это твой личный дневник, его видишь только ты.'
+    : (S.profile.shareOn ? 'Поля с пометкой «видит партнёр» попадают в общую копию. Остальное остаётся только у тебя.' : 'Записи видишь только ты. Партнёр ничего не видит, пока доступ выключен.');
+  sec.appendChild(h('p', { class: 'muted small', text: note }));
+  var vals = S.days[date] && S.days[date].values ? S.days[date].values : {};
+  var fields = activeFields();
+  if (!fields.length) {
+    sec.appendChild(h('div', { class: 'card' }, h('h2', { text: 'Нет включённых полей' }), h('p', { class: 'lead', text: 'В настройках можно включить готовые поля или создать свои.' }), h('div', { class: 'btn-row' }, btn('Настроить поля дневника', function () { go('setup'); }, 'btn btn-primary'))));
+    return sec;
+  }
+  GROUPS.forEach(function (g) {
+    var list = fields.filter(function (f) { return f.g === g; });
+    if (!list.length) return;
+    var card = h('div', { class: 'card group' }, h('h3', { text: g }));
+    list.forEach(function (f) { card.appendChild(fieldBlock(f, date, vals, tracker)); });
+    sec.appendChild(card);
+  });
+  sec.appendChild(h('div', { class: 'btn-row' }, btn('Настроить поля дневника', function () { go('setup'); }, 'btn btn-quiet')));
+  return sec;
+}
+
+/* ====================== root view ====================== */
+function viewApp() {
+  var frag = document.createDocumentFragment();
+  var wrap = h('div', { class: 'wrap' });
+  var ready = S.mode !== 'loading' && S.profileLoaded;
+  if (ready && S.mode !== 'login' && S.profile.role) wrap.appendChild(viewHeader());
+  else wrap.appendChild(h('header', { class: 'top' }, h('div', { class: 'top-row' }, h('div', { class: 'brand' }, logo(), h('span', { class: 'brand-name', text: 'Цикл на двоих' })), h('div', { class: 'who' }, h('span', { id: 'status', text: S.save || '' })))));
+  var b = viewBanner(); if (b) wrap.appendChild(b);
+  var main = h('main', { class: 'main' });
+  if (S.mode === 'login') main.appendChild(viewLogin());
+  else if (!ready) main.appendChild(viewLoading());
+  else if (!S.profile.role) main.appendChild(viewRolePicker());
+  else {
+    if (S.route === 'diary') main.appendChild(viewDiary());
+    else if (S.route === 'charts') main.appendChild(viewCharts());
+    else if (S.route === 'allergens') main.appendChild(viewAllergens());
+    else if (S.route === 'setup') main.appendChild(viewSetup());
+    else main.appendChild(viewCalendar());
+  }
+  main.appendChild(viewFooter());
+  wrap.appendChild(main);
+  frag.appendChild(wrap);
+  if (ready && S.mode !== 'login' && S.profile.role) frag.appendChild(viewTabbar());
+  if (S.sheet) frag.appendChild(viewSheet());
+  if (S.lightbox) frag.appendChild(viewLightbox());
+  return frag;
+}
+
+/* ====================== phase palettes ====================== */
+var PAL = {
+  M: { a: '#2B0B16', b: '#5E1228', ink: '#FCEEF1', c1: '#CF3355', c2: '#8E1A35', hi: '#FF9DB0', glow: '#FF7C95', dink: '#FFF5F7', pa: ['#B8344F', '#E5617D'] },
+  F: { a: ['#E6F8F1', '#0B2926'], b: ['#86D6C6', '#14625A'], ink: ['#0C2E2A', '#E3FBF5'], c1: '#17B3A2', c2: '#0B7E73', hi: '#E8FFF8', glow: '#3DD6C0', dink: '#06302B', pa: ['#0F7F73', '#4CC3A0'] },
+  O: { a: ['#FFEBDA', '#34190A'], b: ['#F7B56C', '#7C4313'], ink: ['#3B2000', '#FFF0DD'], c1: '#FFB066', c2: '#E07B00', hi: '#FFE3B8', glow: '#FFC35C', dink: '#3B2000', pa: ['#9A5700', '#F0B93A'] },
+  L: { a: ['#F1DEE6', '#261A31'], b: ['#B9A8DC', '#4A3B70'], ink: ['#2D1B3B', '#F1E8F8'], c1: '#D18CAA', c2: '#8A74C0', hi: '#F6E3EE', glow: '#C7A6E8', dink: '#2D1B3B', pa: ['#6C4FA6', '#AB8FE2'] },
+  N: { a: ['#E3E9E5', '#161F1B'], b: ['#B8C7BF', '#2B3A33'], ink: ['#17201C', '#E6EDE8'], c1: '#6F8078', c2: '#394841', hi: '#EEF3F0', glow: '#96A79F', dink: '#F3F7F4', pa: ['#394841', '#C1CEC7'] }
+};
+var PHASE_NAME_ORDER = ['M', 'F', 'O', 'L'];
+var MOTION = {
+  M: { f: 0.62, wob: 0.045, sp: 0.55, amp: 0.04, glow: 0.75, bob: 0.012, bf: 0.35, sag: 0.05, beat: 1 },
+  F: { f: 1.0, wob: 0.085, sp: 1.25, amp: 0.026, glow: 0.45, bob: 0.03, bf: 0.8, sag: 0, beat: 0 },
+  O: { f: 1.3, wob: 0.07, sp: 1.5, amp: 0.03, glow: 0.7, bob: 0.016, bf: 0.6, sag: 0, beat: 0 },
+  L: { f: 0.45, wob: 0.06, sp: 0.5, amp: 0.03, glow: 0.5, bob: 0.02, bf: 0.25, sag: 0.03, beat: 0 },
+  N: { f: 0.7, wob: 0.04, sp: 0.6, amp: 0.02, glow: 0.2, bob: 0.01, bf: 0.3, sag: 0, beat: 0 }
+};
+var HAPTIC = { M: [14, 50, 10], F: [8], O: [10, 40, 10, 40, 16], L: [14], N: [8] };
+
+function isDark() {
+  var t = document.documentElement.getAttribute('data-theme');
+  if (t === 'dark') return true;
+  if (t === 'light') return false;
+  try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; }
+}
+function palFor(ph) {
+  var p = PAL[ph] || PAL.N, d = isDark() ? 1 : 0;
+  function pick(v) { return Array.isArray(v) ? v[d] : v; }
+  return { a: pick(p.a), b: pick(p.b), ink: pick(p.ink), c1: p.c1, c2: p.c2, hi: p.hi, glow: p.glow, dink: p.dink, pa: p.pa[d] };
+}
+function hexRGB(h2) { h2 = h2.replace('#', ''); return [parseInt(h2.slice(0, 2), 16), parseInt(h2.slice(2, 4), 16), parseInt(h2.slice(4, 6), 16)]; }
+function rgba(c, a) { return 'rgba(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ',' + a + ')'; }
+function uiPref(k) { var u = S.profile && S.profile.ui; return u && u[k] != null ? u[k] : true; }
+function reducedMotion() {
+  var r = false;
+  try { r = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  return r || !uiPref('motion');
+}
+function haptic(kind, force) {
+  if (!force && !uiPref('haptics')) return;
+  try { if (navigator.vibrate) navigator.vibrate(HAPTIC[kind] || HAPTIC.N); } catch (e) {}
+}
+
+/* ====================== living drop ====================== */
+/* Капля: полярный контур с несколькими гармониками, пружины (желе за пальцем, наклон кончика, плеск жидкости),
+   внутри жидкость с волнами и пузырьками, уровень = сколько цикла прошло. Фон сцены рисует отдельный canvas (#bg-cv). */
+var D = {
+  t: 0, last: 0, sq: 0, sv: 0, press: null, hov: null, pressK: 0, ripples: [], amb: 0, phase: 'N', cur: null, tgt: null, dirty: true, cv: null, size: 0,
+  jx: 0, jy: 0, jvx: 0, jvy: 0, lean: 0, lvx: 0, slosh: 0, svs: 0, splash: [], bub: [], bubT: 0,
+  prog: 0.5, pk: 0.5, ct: { lvl: 0.5, fw: 0, ovA: 0, pmsK: 0, late: 0 }, ck: { lvl: 0.5, fw: 0, ovA: 0, pmsK: 0, late: 0 },
+  mix: { M: 0, F: 0, O: 0, L: 0, N: 1 }, parts: [], sp: {}, burstT: 1
+};
+function setDropPhase(ph, cond) {
+  var p = palFor(ph);
+  var tgt = { c1: hexRGB(p.c1), c2: hexRGB(p.c2), hi: hexRGB(p.hi), glow: hexRGB(p.glow) };
+  if (!D.cur) { D.cur = clone(tgt); D.phase = ph; D.mix[ph] = 1; D.mix.N = ph === 'N' ? 1 : 0; }
+  D.tgt = tgt;
+  if (D.phase !== ph) D.dirty = true;
+  D.phase = ph;
+  if (cond) { D.ct = { lvl: cond.lvl, fw: cond.fw, ovA: cond.ovA, pmsK: cond.pmsK, late: cond.late }; D.prog = cond.prog; }
+}
+function angDiff(a, b) { var d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; }
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function fr(x) { return x - Math.floor(x); }
+function hash(i, s) { return fr(Math.sin(i * 12.9898 + s * 78.233) * 43758.5453); }
+function easeTo(o, key, tg, k) { o[key] += (tg - o[key]) * k; }
+
+function dropFrame(ts) {
+  requestAnimationFrame(dropFrame);
+  var cv = document.getElementById('drop-cv'), bg = document.getElementById('bg-cv');
+  if (!cv) { D.last = ts; return; }
+  var dt = Math.min(0.05, Math.max(0, (ts - (D.last || ts)) / 1000)); D.last = ts;
+  var still = reducedMotion();
+  if (still && !D.dirty && cv === D.cv) return;
+  D.dirty = false;
+  var m = MOTION[D.phase] || MOTION.N;
+  if (!still) D.t += dt;
+  var k = still ? 1 : 1 - Math.exp(-dt * 2.6), kc = still ? 1 : 1 - Math.exp(-dt * 1.5);
+  ['c1', 'c2', 'hi', 'glow'].forEach(function (key) { for (var i = 0; i < 3; i++) D.cur[key][i] += (D.tgt[key][i] - D.cur[key][i]) * k; });
+  Object.keys(D.ct).forEach(function (key) { easeTo(D.ck, key, D.ct[key], kc); });
+  ['M', 'F', 'O', 'L', 'N'].forEach(function (p) { easeTo(D.mix, p, p === D.phase ? 1 : 0, kc); });
+  easeTo(D, 'pk', D.prog, kc);
+  if (!still) {
+    D.sv += (-90 * D.sq - 8 * D.sv) * dt; D.sq += D.sv * dt;
+    D.pressK += ((D.press ? 1 : 0) - D.pressK) * (1 - Math.exp(-dt * 9));
+    // желе: центр капли тянется за пальцем и пружинит обратно
+    var tx = 0, ty = 0;
+    if (D.press) { tx = D.press.x * 0.2; ty = D.press.y * 0.2; } else if (D.hov) { tx = D.hov.x * 0.06; ty = D.hov.y * 0.06; }
+    D.jvx += (150 * (tx - D.jx) - 9 * D.jvx) * dt; D.jvy += (150 * (ty - D.jy) - 9 * D.jvy) * dt;
+    D.jx += D.jvx * dt; D.jy += D.jvy * dt;
+    var ltg = clamp(-D.jvx * 0.45, -0.6, 0.6) + tx * 0.9;
+    D.lvx += (60 * (ltg - D.lean) - 7 * D.lvx) * dt; D.lean += D.lvx * dt;
+    D.svs += (-D.jvx * 6) * dt;
+    D.svs += (-38 * D.slosh - 2.2 * D.svs) * dt; D.slosh += D.svs * dt;
+    D.slosh = clamp(D.slosh, -1.4, 1.4);
+    D.amb += dt;
+    if (D.phase === 'F' && D.amb > 2.8) { D.amb = 0; D.ripples.push({ x: 0, y: 0, age: 0, halo: true }); }
+    D.ripples.forEach(function (r) { r.age += dt; });
+    D.ripples = D.ripples.filter(function (r) { return r.age < 1.5; });
+    D.splash.forEach(function (s) { s.age += dt; s.vy += 3.2 * dt; s.x += s.vx * dt; s.y += s.vy * dt; });
+    D.splash = D.splash.filter(function (s) { return s.age < s.life; });
+    D.bub.forEach(function (b) { b.age += dt; b.y -= b.v * dt; });
+    D.bub = D.bub.filter(function (b) { return b.age < b.life; });
+    D.bubT += dt * (D.phase === 'F' ? 2.2 : D.phase === 'O' ? 1.6 : 0.8);
+    if (D.bubT > 1 && D.bub.length < 9) { D.bubT = 0; D.bub.push({ x: rnd(-0.55, 0.55), y: 0.95, v: rnd(0.22, 0.5), r: rnd(0.025, 0.06), age: 0, life: rnd(2.2, 3.6), ph: rnd(0, 6.28) }); }
+  } else { D.sq = 0; D.pressK = 0; D.ripples = []; D.splash = []; D.bub = []; D.jx = D.jy = D.lean = D.slosh = 0; }
+  drawDrop(cv, m);
+  if (bg) drawScene(bg, dt, still);
+}
+function pulseOf(m) {
+  var ph = fr(D.t * m.f);
+  if (m.beat) {
+    var a = Math.exp(-Math.pow((ph - 0.08) / 0.06, 2)), b = 0.65 * Math.exp(-Math.pow((ph - 0.26) / 0.07, 2));
+    return 1 + m.amp * 1.7 * (a + b - 0.3);
+  }
+  return 1 + m.amp * Math.sin(2 * Math.PI * ph);
+}
+function dropPath(ctx, cx, cy, R, m, pulse) {
+  var N = 84, pts = [], t = D.t;
+  var tipA = -Math.PI / 2 + D.lean + 0.14 * Math.sin(t * 0.6 * m.sp);
+  var breathe = 1 + 0.6 * Math.sin(t * 0.37);
+  for (var i = 0; i < N; i++) {
+    var th = i / N * 2 * Math.PI;
+    var w = 0.5 * Math.sin(2 * th + t * m.sp * 0.7) + 0.5 * Math.sin(3 * th - t * m.sp * 1.3) + 0.35 * Math.sin(5 * th + t * m.sp * 0.9 + 1.3) + 0.2 * Math.sin(7 * th - t * m.sp * 1.7);
+    var r = R * pulse * (1 + m.wob * w * breathe);
+    r += R * 0.2 * Math.exp(-Math.pow(angDiff(th, tipA) / 0.5, 2));
+    if (m.sag) r *= 1 + m.sag * Math.max(0, Math.sin(th));
+    if (D.pressK > 0.01 && D.press) r += R * 0.15 * D.pressK * Math.exp(-Math.pow(angDiff(th, D.press.ang), 2) / 0.3);
+    pts.push([cx + r * Math.cos(th) * (1 + D.sq), cy + r * Math.sin(th) * (1 - D.sq)]);
+  }
+  ctx.beginPath();
+  var mid = function (a, b) { return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; };
+  var s = mid(pts[N - 1], pts[0]);
+  ctx.moveTo(s[0], s[1]);
+  for (var j = 0; j < N; j++) { var e = mid(pts[j], pts[(j + 1) % N]); ctx.quadraticCurveTo(pts[j][0], pts[j][1], e[0], e[1]); }
+  ctx.closePath();
+}
+function waveFill(ctx, x0, x1, y, amp, len, spd, ph, tilt, cx, bottom) {
+  ctx.beginPath(); ctx.moveTo(x0, bottom);
+  for (var x = x0; x <= x1; x += 5) ctx.lineTo(x, y + tilt * (x - cx) + amp * Math.sin(x / len * 6.2832 + D.t * spd + ph));
+  ctx.lineTo(x1, bottom); ctx.closePath();
+}
+function drawDrop(cv, m) {
+  var dpr = Math.min(2, window.devicePixelRatio || 1), size = cv.clientWidth || 300;
+  if (cv !== D.cv || Math.abs(size - D.size) > 1) {
+    cv.width = Math.round(size * dpr); cv.height = Math.round(size * dpr); D.cv = cv; D.size = size;
+  }
+  var ctx = cv.getContext('2d'); if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, size, size);
+  var R = size * 0.3, c = D.cur, t = D.t;
+  var cx = size / 2 + R * D.jx + R * 0.02 * Math.sin(t * 0.5), cy = size * 0.55 + R * D.jy + R * m.bob * Math.sin(2 * Math.PI * m.bf * t);
+  var pulse = pulseOf(m);
+  var beat = 0.8 + 0.2 * Math.sin(2 * Math.PI * m.f * t);
+  if (D.phase === 'O') {
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * 0.12); ctx.lineCap = 'round'; ctx.lineWidth = 4;
+    var strong = 0.45 + 0.2 * D.ck.ovA;
+    for (var i = 0; i < 14; i++) {
+      var a = i / 14 * 2 * Math.PI, r1 = R * (1.34 + 0.05 * Math.sin(t * 1.5 + i)), r2 = r1 + R * (i % 2 ? 0.14 : 0.24) * (0.8 + 0.3 * Math.sin(t * 2 + i * 1.7));
+      ctx.strokeStyle = rgba(c.glow, strong * D.mix.O);
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.shadowColor = rgba(c.glow, m.glow * beat);
+  ctx.shadowBlur = size * 0.15; ctx.shadowOffsetY = size * 0.025;
+  dropPath(ctx, cx, cy, R, m, pulse);
+  var g = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.45, 0, cx - R * 0.1, cy - R * 0.1, R * 1.55);
+  g.addColorStop(0, rgba(c.hi, 1)); g.addColorStop(0.3, rgba(c.c1, 1)); g.addColorStop(1, rgba(c.c2, 1));
+  ctx.fillStyle = g; ctx.fill();
+  ctx.restore();
+  ctx.save();
+  dropPath(ctx, cx, cy, R, m, pulse); ctx.clip();
+  // жидкость внутри: уровень растёт вместе с циклом
+  var level = 0.28 + 0.5 * clamp(D.pk, 0, 1), yL = cy + R - 2 * R * level;
+  var amp = R * (0.035 + 0.05 * Math.min(1, Math.abs(D.slosh))) * (0.8 + 0.5 * m.sp), tilt = D.slosh * 0.32 + 0.03 * Math.sin(t * 0.4);
+  ctx.fillStyle = rgba(c.c2, 0.34);
+  waveFill(ctx, cx - R * 1.6, cx + R * 1.6, yL + R * 0.03, amp * 0.9, R * 1.4, 0.9 * m.sp + 0.5, 1.7, tilt * 0.8, cx, cy + R * 1.7); ctx.fill();
+  ctx.fillStyle = rgba(c.c1, 0.42);
+  waveFill(ctx, cx - R * 1.6, cx + R * 1.6, yL, amp, R * 1.1, -(1.2 * m.sp + 0.6), 0, tilt, cx, cy + R * 1.7); ctx.fill();
+  ctx.strokeStyle = rgba(c.hi, 0.45); ctx.lineWidth = 1.5; ctx.beginPath();
+  for (var x = cx - R * 1.6; x <= cx + R * 1.6; x += 5) { var yy = yL + tilt * (x - cx) + amp * Math.sin(x / (R * 1.1) * 6.2832 - (1.2 * m.sp + 0.6) * t); if (x === cx - R * 1.6) ctx.moveTo(x, yy); else ctx.lineTo(x, yy); }
+  ctx.stroke();
+  D.bub.forEach(function (b) {
+    var bx = cx + R * (b.x + 0.05 * Math.sin(b.age * 2 + b.ph)), by = cy + R * (b.y - (b.y > 0 ? 0 : 0)) , f = Math.sin(Math.PI * Math.min(1, b.age / b.life));
+    if (by < yL) return;
+    ctx.beginPath(); ctx.arc(bx, by, R * b.r, 0, 6.2832); ctx.strokeStyle = 'rgba(255,255,255,' + (0.55 * f) + ')'; ctx.lineWidth = 1.2; ctx.stroke();
+  });
+  var sh = ctx.createLinearGradient(0, cy - R, 0, cy + R * 1.2);
+  sh.addColorStop(0, 'rgba(255,255,255,0.2)'); sh.addColorStop(0.5, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(0,0,0,0.16)');
+  ctx.fillStyle = sh; ctx.fillRect(0, 0, size, size);
+  ctx.beginPath(); ctx.ellipse(cx - R * 0.38 + R * 0.04 * Math.sin(t * 0.7), cy - R * 0.5, R * 0.2, R * 0.12, -0.6, 0, 2 * Math.PI);
+  ctx.fillStyle = 'rgba(255,255,255,0.34)'; ctx.fill();
+  D.ripples.forEach(function (r) {
+    if (r.halo) return;
+    ctx.beginPath(); ctx.arc(cx + r.x * R, cy + r.y * R, r.age * R * 1.1, 0, 2 * Math.PI);
+    ctx.strokeStyle = rgba(c.hi, 0.55 * (1 - r.age / 1.5)); ctx.lineWidth = 2; ctx.stroke();
+  });
+  ctx.restore();
+  ctx.save(); dropPath(ctx, cx, cy, R, m, pulse); ctx.strokeStyle = 'rgba(255,255,255,0.24)'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore();
+  D.ripples.forEach(function (r) {
+    var rad = R * (1.05 + (r.halo ? r.age / 1.5 * 0.55 : r.age * 0.45)), al = (r.halo ? 0.45 : 0.35) * (1 - r.age / 1.5);
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, 2 * Math.PI);
+    ctx.strokeStyle = rgba(c.glow, al); ctx.lineWidth = 2; ctx.stroke();
+  });
+  D.splash.forEach(function (s) {
+    var f = 1 - s.age / s.life;
+    ctx.beginPath(); ctx.arc(cx + s.x * R, cy + s.y * R, R * s.r * (0.6 + 0.4 * f), 0, 6.2832); ctx.fillStyle = rgba(c.c1, 0.9 * f); ctx.fill();
+  });
+}
+function dropPointer(e, wrap, kind) {
+  var r = wrap.getBoundingClientRect(), size = r.width, R = size * 0.3;
+  var x = (e.clientX - r.left - size / 2), y = (e.clientY - r.top - size * 0.55);
+  var pt = { ang: Math.atan2(y, x), x: clamp(x / R, -1.2, 1.2), y: clamp(y / R, -1.2, 1.2) };
+  if (kind === 'hover') { D.hov = pt; return; }
+  D.press = pt;
+  if (kind === 'down') {
+    D.ripples.push({ x: pt.x, y: pt.y, age: 0 });
+    D.sv = 0.7; D.svs += 2.2; D.dirty = true;
+    if (!reducedMotion()) {
+      var a = Math.atan2(pt.y, pt.x), n = 6;
+      for (var i = 0; i < n; i++) {
+        var aa = a + rnd(-0.7, 0.7), sp = rnd(0.9, 1.8);
+        D.splash.push({ x: Math.cos(aa) * 1.0, y: Math.sin(aa) * 1.0, vx: Math.cos(aa) * sp, vy: Math.sin(aa) * sp - 0.8, r: rnd(0.03, 0.065), age: 0, life: rnd(0.55, 0.9) });
+      }
+    }
+    haptic(D.phase);
+  }
+}
+function dropRelease() { D.press = null; D.dirty = true; }
+function dropLeave() { D.press = null; D.hov = null; D.dirty = true; }
+
+/* ====================== stage background: scenes by phase and cycle conditions ====================== */
+function addPart(p) { if (D.parts.length < 130) D.parts.push(p); }
+function every(key, rate, dt, fn) {
+  D.sp[key] = (D.sp[key] || 0) + rate * dt;
+  var n = 0; while (D.sp[key] >= 1 && n++ < 3) { D.sp[key] -= 1; fn(); }
+  if (D.sp[key] > 3) D.sp[key] = 0;
+}
+function spawnScene(dt, W, H, cx, cy, R) {
+  var ph = D.phase, k = D.ck;
+  if (ph === 'M') every('M', 2.5 + 5 * k.lvl, dt, function () { addPart({ sc: 'M', kind: 'ember', x: rnd(0, W), y: rnd(H * 0.7, H + 8), vx: rnd(-4, 4), vy: -rnd(9, 20), r: rnd(1.2, 3), age: 0, life: rnd(7, 11), ph: rnd(0, 6.28) }); });
+  if (ph === 'F') every('F', 2 + 6 * k.lvl, dt, function () { addPart({ sc: 'F', kind: 'bubble', x: rnd(0, W), y: H + 10, vx: 0, vy: -rnd(28, 58), r: rnd(2.5, 8), age: 0, life: rnd(5, 8), ph: rnd(0, 6.28), amp: rnd(5, 14) }); });
+  if (ph === 'O') every('S', 3 + 6 * k.lvl, dt, function () { addPart({ sc: 'O', kind: 'star', x: rnd(0, W), y: rnd(0, H), vx: 0, vy: -rnd(0, 6), r: rnd(3, 7), age: 0, life: rnd(1.6, 3) }); });
+  if (ph === 'O' && k.ovA > 0.5) {
+    D.burstT -= dt;
+    if (D.burstT <= 0) {
+      D.burstT = 3.4;
+      for (var i = 0; i < 12; i++) { var a = i / 12 * 6.2832 + rnd(-0.2, 0.2), s = rnd(60, 140); addPart({ sc: 'O', kind: 'spark', x: cx + Math.cos(a) * R * 1.05, y: cy + Math.sin(a) * R * 1.05, vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: rnd(1.5, 3), age: 0, life: rnd(0.9, 1.5) }); }
+    }
+  }
+  if (k.fw > 0.3 && (ph === 'F' || ph === 'O')) every('G', 1.6 * k.fw, dt, function () { var a = rnd(0, 6.2832), d = R * rnd(1.25, 2.1); addPart({ sc: 'G', kind: 'star', gold: 1, x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d * 0.9, vx: 0, vy: -rnd(0, 5), r: rnd(3, 6), age: 0, life: rnd(1.4, 2.4) }); });
+}
+function star4(ctx, x, y, r) {
+  ctx.beginPath(); ctx.moveTo(x, y - r);
+  ctx.quadraticCurveTo(x, y, x + r, y); ctx.quadraticCurveTo(x, y, x, y + r); ctx.quadraticCurveTo(x, y, x - r, y); ctx.quadraticCurveTo(x, y, x, y - r);
+  ctx.closePath(); ctx.fill();
+}
+function radial(ctx, x, y, r0, r1, col, a0) {
+  var g = ctx.createRadialGradient(x, y, r0, x, y, r1);
+  g.addColorStop(0, rgba(col, a0)); g.addColorStop(1, rgba(col, 0));
+  return g;
+}
+function layerM(ctx, W, H, cx, cy, R, a, t, k, c) {
+  if (a < 0.01) return;
+  ctx.save(); ctx.globalAlpha = a;
+  var ga = 0.2 + 0.12 * k.lvl + 0.03 * Math.sin(t * 7.3) * Math.sin(t * 2.9) + 0.04 * Math.sin(t * 0.75);
+  ctx.fillStyle = radial(ctx, cx, cy + R * 0.2, R * 0.6, R * 3.4, c.glow, ga); ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < 3; i++) {
+    var bx = W * (0.2 + 0.3 * i) + W * 0.1 * Math.sin(t * 0.09 + i * 2.1), by = H * (0.3 + 0.25 * ((i + 1) % 3)) + H * 0.04 * Math.sin(t * 0.12 + i);
+    ctx.fillStyle = radial(ctx, bx, by, 0, W * 0.45, c.c1, 0.14 + 0.06 * k.lvl); ctx.fillRect(0, 0, W, H);
+  }
+  var vg = ctx.createRadialGradient(cx, cy, R * 2.2, cx, cy, Math.max(W, H) * 0.8);
+  vg.addColorStop(0, 'rgba(10,0,5,0)'); vg.addColorStop(1, 'rgba(10,0,5,0.4)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+function layerF(ctx, W, H, cx, cy, R, a, t, k, c) {
+  if (a < 0.01) return;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = radial(ctx, W * 0.2, -H * 0.05, 0, W * 0.95, [255, 255, 255], 0.3); ctx.fillRect(0, 0, W, H);
+  ctx.lineWidth = 2;
+  for (var j = 0; j < 3; j++) {
+    ctx.beginPath();
+    for (var x = 0; x <= W; x += 8) { var y = H * (0.76 + 0.07 * j) + 8 * Math.sin(x / 48 + t * (0.6 + 0.25 * j) + j * 1.7) + 4 * Math.sin(x / 21 - t * 0.9); if (!x) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+    ctx.strokeStyle = 'rgba(255,255,255,' + (0.16 + 0.1 * k.lvl) + ')'; ctx.stroke();
+    if (j === 0) { ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fillStyle = rgba(c.c1, 0.1); ctx.fill(); }
+  }
+  ctx.restore();
+}
+function layerO(ctx, W, H, cx, cy, R, a, t, k, c) {
+  if (a < 0.01) return;
+  ctx.save(); ctx.globalAlpha = a;
+  var L = Math.max(W, H) * 1.1, inten = 0.2 + 0.12 * k.lvl + 0.1 * k.ovA;
+  var g = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, L * 0.8);
+  g.addColorStop(0, rgba(c.glow, inten * 1.4)); g.addColorStop(1, rgba(c.glow, 0));
+  ctx.fillStyle = g;
+  var n = 18;
+  for (var i = 0; i < n; i++) {
+    var ang = i / n * 6.2832 + t * 0.05, w = (i % 2 ? 0.035 : 0.06) * (1 + 0.25 * Math.sin(t * 1.3 + i));
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + L * Math.cos(ang - w), cy + L * Math.sin(ang - w)); ctx.lineTo(cx + L * Math.cos(ang + w), cy + L * Math.sin(ang + w)); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = radial(ctx, cx, cy, R * 0.8, R * 3.2, c.glow, 0.28 + 0.1 * Math.sin(t * 1.3)); ctx.fillRect(0, 0, W, H);
+  for (var b = 0; b < 6; b++) {
+    var bx = W * fr(0.13 + 0.21 * b + 0.02 * Math.sin(t * 0.1 + b)), by = H * (1.1 - fr(t * 0.018 * (0.6 + 0.1 * b) + 0.17 * b)), br = 14 + 10 * (b % 3);
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, 6.2832); ctx.fillStyle = rgba(c.hi, 0.12); ctx.fill();
+  }
+  ctx.restore();
+}
+function layerL(ctx, W, H, cx, cy, R, a, t, k, c) {
+  if (a < 0.01) return;
+  ctx.save(); ctx.globalAlpha = a;
+  var sp = 1 + 0.8 * k.pmsK;
+  for (var i = 0; i < 4; i++) {
+    var mx = W * (0.2 + 0.3 * i) + W * 0.12 * Math.sin(t * 0.07 * sp * (1 + 0.3 * i) + i * 2), my = H * (0.2 + 0.19 * i) + 12 * Math.sin(t * 0.1 * sp + i), rx = W * 0.55, ry = H * 0.2;
+    ctx.save(); ctx.translate(mx, my); ctx.scale(1, ry / rx);
+    ctx.fillStyle = radial(ctx, 0, 0, 0, rx, c.c2, 0.16 + 0.1 * k.pmsK); ctx.fillRect(-rx, -rx, rx * 2, rx * 2); ctx.restore();
+  }
+  if (k.pmsK > 0.02) for (var j = 0; j < 3; j++) {
+    var dx = W * (0.15 + 0.35 * j) + W * 0.1 * Math.sin(t * 0.06 * sp + j * 3), dy = H * (0.55 + 0.12 * (j % 2)) + 10 * Math.sin(t * 0.08 + j);
+    ctx.save(); ctx.translate(dx, dy); ctx.scale(1, 0.4);
+    ctx.fillStyle = radial(ctx, 0, 0, 0, W * 0.5, [60, 35, 100], 0.15 * k.pmsK); ctx.fillRect(-W * 0.5, -W * 0.5, W, W); ctx.restore();
+  }
+  for (var s = 0; s < 18; s++) {
+    var sx = W * hash(s, 1), sy = H * (0.04 + 0.5 * hash(s, 2)), tw = 0.25 + 0.35 * Math.sin(t * (0.6 + (s % 5) * 0.15) + s);
+    ctx.beginPath(); ctx.arc(sx, sy, 0.8 + (s % 3) * 0.5, 0, 6.2832); ctx.fillStyle = 'rgba(255,255,255,' + Math.max(0, tw) + ')'; ctx.fill();
+  }
+  ctx.lineCap = 'round'; ctx.lineWidth = 2.5;
+  for (var o = 0; o < 3; o++) {
+    var ra = R * (1.28 + 0.15 * o), st = t * (0.14 + 0.08 * o) * (o % 2 ? -1 : 1) + o * 2.1, len = 1.0 + 0.25 * o;
+    ctx.beginPath(); ctx.arc(cx, cy, ra, st, st + len); ctx.strokeStyle = rgba(c.hi, 0.07 + 0.22 * k.pmsK); ctx.stroke();
+  }
+  ctx.restore();
+}
+function layerN(ctx, W, H, cx, cy, R, a, t, k, c) {
+  if (a < 0.01) return;
+  ctx.save(); ctx.globalAlpha = a;
+  for (var i = 0; i < 3; i++) {
+    var mx = W * (0.25 + 0.3 * i) + W * 0.1 * Math.sin(t * 0.06 + i * 2), my = H * (0.3 + 0.2 * i) + 10 * Math.sin(t * 0.09 + i), rx = W * 0.5, ry = H * 0.18;
+    ctx.save(); ctx.translate(mx, my); ctx.scale(1, ry / rx); ctx.fillStyle = radial(ctx, 0, 0, 0, rx, c.c2, 0.12); ctx.fillRect(-rx, -rx, rx * 2, rx * 2); ctx.restore();
+  }
+  ctx.lineWidth = 2;
+  for (var j = 0; j < 3; j++) {
+    var age = fr(t / 4 + j / 3), p = k.late > 0.5 ? 1 - age : age, rad = R * (1.1 + p * 1.6);
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, 6.2832); ctx.strokeStyle = rgba(c.glow, 0.2 * (k.late > 0.5 ? Math.sin(Math.PI * age) : 1 - age)); ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawScene(cv, dt, still) {
+  var stage = cv.parentNode, dEl = document.getElementById('drop-cv');
+  if (!stage || !dEl) return;
+  var dpr = Math.min(1.5, window.devicePixelRatio || 1), W = stage.clientWidth, H = stage.clientHeight;
+  if (!W || !H) return;
+  if (cv.__w !== W || cv.__h !== H || cv.__d !== dpr) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.__w = W; cv.__h = H; cv.__d = dpr; }
+  var ctx = cv.getContext('2d'); if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  var sr = stage.getBoundingClientRect(), dr = dEl.getBoundingClientRect();
+  var cx = dr.left - sr.left + dr.width / 2, cy = dr.top - sr.top + dr.height * 0.55, R = dr.width * 0.3;
+  var t = D.t, k = D.ck, c = D.cur, mx = D.mix;
+  layerN(ctx, W, H, cx, cy, R, mx.N, t, k, c);
+  layerM(ctx, W, H, cx, cy, R, mx.M, t, k, c);
+  layerF(ctx, W, H, cx, cy, R, mx.F, t, k, c);
+  layerO(ctx, W, H, cx, cy, R, mx.O, t, k, c);
+  layerL(ctx, W, H, cx, cy, R, mx.L, t, k, c);
+  if (still) { D.parts = []; softenText(ctx, stage, sr, W, H); return; }
+  spawnScene(dt, W, H, cx, cy, R);
+  var live = [];
+  D.parts.forEach(function (p) {
+    p.age += dt;
+    var w = p.sc === 'G' ? clamp(k.fw * 1.5, 0, 1) : mx[p.sc];
+    if (p.age >= p.life || p.y < -24 || (p.sc !== 'G' && w < 0.02 && p.sc !== D.phase)) return;
+    live.push(p);
+    if (p.kind === 'spark') { var dg = Math.exp(-1.6 * dt); p.vx *= dg; p.vy *= dg; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    var f = Math.sin(Math.PI * Math.min(1, p.age / p.life)), al = f * w;
+    if (al < 0.01) return;
+    if (p.kind === 'ember') {
+      var ex = p.x + Math.sin(p.age * 0.9 + p.ph) * 8;
+      ctx.fillStyle = rgba(c.glow, 0.14 * al); ctx.beginPath(); ctx.arc(ex, p.y, p.r * 3.2, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = rgba(c.hi, 0.6 * al); ctx.beginPath(); ctx.arc(ex, p.y, p.r, 0, 6.2832); ctx.fill();
+    } else if (p.kind === 'bubble') {
+      var bx = p.x + Math.sin(p.age * 1.4 + p.ph) * p.amp;
+      ctx.beginPath(); ctx.arc(bx, p.y, p.r, 0, 6.2832); ctx.strokeStyle = 'rgba(255,255,255,' + (0.6 * al) + ')'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.1 * al) + ')'; ctx.fill();
+      ctx.beginPath(); ctx.arc(bx - p.r * 0.35, p.y - p.r * 0.35, Math.max(0.6, p.r * 0.2), 0, 6.2832); ctx.fillStyle = 'rgba(255,255,255,' + (0.7 * al) + ')'; ctx.fill();
+    } else if (p.kind === 'star') {
+      ctx.fillStyle = p.gold ? 'rgba(255,196,84,' + (0.15 * al) + ')' : rgba(c.glow, 0.16 * al); ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 2.2, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = p.gold ? 'rgba(255,214,120,' + (0.95 * al) + ')' : 'rgba(255,255,255,' + (0.9 * al * al) + ')'; star4(ctx, p.x, p.y, p.r * (0.7 + 0.5 * f));
+    } else {
+      ctx.fillStyle = rgba(c.hi, 0.9 * al); ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.2832); ctx.fill();
+    }
+  });
+  D.parts = live;
+  softenText(ctx, stage, sr, W, H);
+}
+function softenText(ctx, stage, sr, W, H) {
+  var cp = stage.querySelector('.stage-copy'); if (!cp) return;
+  var top = cp.getBoundingClientRect().top - sr.top - 14;
+  var g = ctx.createLinearGradient(0, top, 0, top + 26);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.62)');
+  ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = g; ctx.fillRect(0, top, W, H - top); ctx.restore();
+}
+
+/* ====================== stage copy ====================== */
+function phaseKey(info, perms) {
+  if (!info) return null;
+  if (perms.phase && info.phase) return info.phase;
+  if (perms.period && info.period) return 'M';
+  if (perms.ovulation && info.ov) return 'O';
+  if (perms.pms && info.pms) return 'L';
+  return null;
+}
+function stageCopy(model, info, ph, late, st) {
+  var self = model.kind === 'own' || (model.preview === false && false);
+  var own = model.kind === 'own', p = model.perms, d = info && info.cycleDay;
+  if (late && own) return { k: 'Задержка ' + days(st.lateDays), t: 'Месячные пока не начались', s: 'Ожидались ' + fd('dm', st.nextStart) + '. Когда начнутся, отметь день, и календарь пересчитается.' };
+  if (own) {
+    if (info && info.pms && ph === 'L') return { k: 'Лютеиновая фаза' + (d ? ', день ' + d : ''), t: 'Возможен ПМС: сбавь темп', s: 'Дни перед месячными. Ниже советы, которые могут помочь.' };
+    if (ph === 'M') return { k: 'Месячные' + (d ? ', день ' + d : ''), t: 'Сегодня можно сбавить темп', s: 'Тепло, вода и отдых не требуют оправданий.' };
+    if (ph === 'F') return { k: 'Фолликулярная фаза' + (d ? ', день ' + d : ''), t: 'Силы понемногу возвращаются', s: 'У многих в эти дни легче даётся нагрузка.' };
+    if (ph === 'O') return { k: 'Овуляция' + (info && info.ov === 'a' ? ' отмечена' : ' по расчёту'), t: 'Сегодня расчётный день овуляции', s: 'Фертильное окно: ' + (info && info.fw ? 'идёт сейчас' : 'рядом') + '. Это прогноз по твоим параметрам.' };
+    if (ph === 'L') return { k: 'Лютеиновая фаза' + (d ? ', день ' + d : ''), t: 'Время для спокойного ритма', s: 'Вторая половина цикла: организм готовится к новому.' };
+    return { k: 'Сегодня', t: 'Данных цикла пока нет', s: 'Добавь дату начала месячных, и здесь появится твоя фаза.' };
+  }
+  if (ph === 'M') return { k: 'Сейчас у неё месячные', t: 'Спросите, что сегодня поможет, и возьмите на себя быт', s: 'Усталость и боль в эти дни не каприз и не про вас.' };
+  if (ph === 'F') return { k: 'Фолликулярная фаза', t: 'Хорошее время для общих планов', s: 'Самочувствие у многих выравнивается.' };
+  if (ph === 'O') return { k: info && info.fw ? 'Возможно, сейчас у неё фертильные дни' : 'Возможно, у неё овуляция', t: 'Обсудите защиту, если беременность сейчас не в планах', s: 'Календарь считает по её параметрам. Это прогноз, не контрацепция.' };
+  if (ph === 'L') return { k: info && info.pms ? 'Возможен ПМС' : 'Лютеиновая фаза', t: 'Сон, еда по часам и меньше суеты помогают', s: 'Спросите заранее, что ей сейчас легче всего.' };
+  return { k: 'Сегодня', t: 'Ничего особенного из открытого', s: 'Она показывает вам только выбранные слои.' };
+}
+function dropModes(model, info, late, st) {
+  var t = model.todayN, out = [], p = model.perms;
+  if (late && st) out.push({ n: st.lateDays, s: 'дн. задержки' });
+  else if (info && info.cycleDay != null) out.push({ n: info.cycleDay, s: 'день цикла' });
+  if (!late && p.period) { var a = E.firstRun(model.getInfo, 'period', t, 150); if (a && !a.now) out.push({ n: a.start - t, s: 'до месячных' }); }
+  if (p.ovulation) { var b = E.firstRun(model.getInfo, 'ov', t, 150); if (b) out.push(b.now ? { n: '•', s: 'овуляция сегодня' } : { n: b.start - t, s: 'до овуляции' }); }
+  if (p.fertile) { var c = E.firstRun(model.getInfo, 'fw', t, 150); if (c && !c.now) out.push({ n: c.start - t, s: 'до фертильного окна' }); }
+  if (!out.length) out.push({ n: '–', s: 'нет данных' });
+  return out;
+}
+
+/* ====================== tips ====================== */
+var SRC = {
+  nyp: { n: 'NewYork-Presbyterian', u: 'https://www.nyp.org/healthmatters/menstrual-pain-whats-normal-and-when-to-see-a-doctor' },
+  mlp: { n: 'MedlinePlus', u: 'https://medlineplus.gov/ency/patientinstructions/000556.htm' },
+  mayo: { n: 'Mayo Clinic', u: 'https://www.mayoclinic.org/health/menorrhagia/DS00394/DSECTION=causes' }
+};
+var TIPS = [
+  { id: 's1', a: 's', ph: 'M', tag: 'Боль', t: 'Грелка на низ живота', x: 'Тепло считается одним из самых эффективных способов при менструальных спазмах: в одном из исследований оно сработало лучше парацетамола. Держи грелку на животе или пояснице, пока спазм не отпустит, и следи, чтобы она не была слишком горячей.', src: ['nyp'] },
+  { id: 's2', a: 's', ph: 'M', tag: 'Боль', t: 'Не терпи боль до пика', x: 'Безрецептурные противовоспалительные (НПВП) называют средством первой линии. Если спазмы обычно начинаются в известный день, принимать их можно начать за день или два до этого, когда нет противопоказаний. Дозу бери из инструкции или у врача.', src: ['nyp'] },
+  { id: 's3', a: 's', ph: 'M', tag: 'Движение', t: 'Мягкая активность', x: 'Аэробные нагрузки и йога, судя по исследованиям, уменьшают спазмы: эндорфины работают против простагландинов. Хватит спокойной прогулки или растяжки.', src: ['nyp'] },
+  { id: 's4', a: 's', ph: 'M', tag: 'Привычки', t: 'Сон и меньше кофеина', x: 'В дни месячных помогают достаточный сон, меньше кофеина и алкоголя и продукты с противовоспалительным действием.', src: ['nyp'] },
+  { id: 's5', a: 's', ph: 'M', tag: 'К врачу', doc: 1, t: 'Боль, с которой не справиться дома', x: 'Покажись врачу, если боль вызывает тошноту или рвоту, не снимается безрецептурными средствами, сопровождается головокружением при обильных месячных, ректальным кровотечением, болью после близости, внезапной болью в тазу или температурой с ознобом.', src: ['nyp'] },
+  { id: 's6', a: 's', ph: 'M', tag: 'К врачу', doc: 1, t: 'Обильные месячные', x: 'Повод не откладывать визит: прокладка или тампон промокают каждый час дольше двух часов подряд, кровотечение между месячными, сгустки крупнее монеты в 25 центов (около 2,5 см), кровотечение дольше недели, слабость и одышка.', src: ['mayo'] },
+  { id: 's7', a: 's', ph: 'FO', tag: 'Движение', t: 'Двигайся весь месяц', x: 'Регулярная физическая активность в течение всего месяца снижает выраженность симптомов ПМС. Сейчас, когда сил обычно больше, хорошее время для привычки.', src: ['mlp'] },
+  { id: 's8', a: 's', ph: 'FO', tag: 'Питание', t: 'Ешь регулярно и разнообразно', x: 'Рекомендуют цельные злаки, овощи и фрукты, меньше соли и сахара и небольшие приёмы пищи или перекусы примерно каждые 3 часа без переедания.', src: ['mlp'] },
+  { id: 's9', a: 's', ph: 'O', tag: 'О приложении', t: 'Фертильное окно: это прогноз', x: 'Овуляция и окно в календаре рассчитаны по параметрам, которые ты задала сама. Это не метод контрацепции: если беременность сейчас не в планах, нужна надёжная защита.', src: [] },
+  { id: 's10', a: 's', ph: 'L', tag: 'Питание', t: 'Меньше соли и сахара, чаще и понемногу', x: 'При ПМС советуют сбалансированное питание с цельными злаками, овощами и фруктами, небольшие приёмы пищи примерно каждые 3 часа и достаточно воды или сока.', src: ['mlp'] },
+  { id: 's11', a: 's', ph: 'L', tag: 'Привычки', t: 'Кофеин и алкоголь', x: 'Перед месячными лучше обойтись без напитков с кофеином, газировки и алкоголя: они могут усилить симптомы.', src: ['mlp'] },
+  { id: 's12', a: 's', ph: 'L', tag: 'Стресс', t: 'Дыхание и расслабление', x: 'С напряжением помогают глубокое дыхание, расслабление мышц, йога и массаж.', src: ['mlp'] },
+  { id: 's13', a: 's', ph: 'L', tag: 'Сон', t: 'Спокойный вечер', x: 'Спи достаточно в течение всего месяца. Перед сном хорошо работают тихие занятия и спокойная музыка.', src: ['mlp'] },
+  { id: 's14', a: 's', ph: 'L', tag: 'Добавки', t: 'Витамины и минералы: через врача', x: 'Врач может порекомендовать витамин B6, кальций или магний. Назначать их себе самой не стоит: дозы обсуди с врачом.', src: ['mlp'] },
+  { id: 's15', a: 's', ph: 'L', tag: 'К врачу', doc: 1, t: 'Когда ПМС стоит обсудить с врачом', x: 'Если симптомы не проходят при самопомощи; появились стойкая грусть, раздражительность, изменение веса, проблемы со сном, усталость; нашлись новые или меняющиеся уплотнения в груди или есть выделения из соска.', src: ['mlp'] },
+  { id: 'p1', a: 'p', ph: 'M', tag: 'Забота', t: 'Тепло и вода без просьбы', x: 'Тепло помогает при менструальных спазмах. Принесите грелку и тёплое питьё, не дожидаясь, пока попросит.', src: ['nyp'] },
+  { id: 'p2', a: 'p', ph: 'M', tag: 'Забота', t: 'Возьмите быт на себя', x: 'Боль и усталость в эти дни реальны. Заберите на себя дела, которые можно не делать ей: готовку, уборку, покупки.', src: [] },
+  { id: 'p3', a: 'p', ph: 'M', tag: 'К врачу', doc: 1, t: 'Когда настоять на враче', x: 'Если она описывает боль с тошнотой или рвотой, головокружение при обильных месячных или кровотечение, которое промокает прокладку каждый час, это повод обратиться к врачу, а не переждать.', src: ['nyp', 'mayo'] },
+  { id: 'p4', a: 'p', ph: 'FO', tag: 'Вместе', t: 'Общие нагрузки', x: 'Регулярная активность в течение месяца снижает ПМС. Позовите её на прогулку или в зал, если ей это по душе.', src: ['mlp'] },
+  { id: 'p5', a: 'p', ph: 'O', tag: 'Разговор', t: 'Про защиту', x: 'Календарь считает фертильное окно по её параметрам, это прогноз. Если беременность не в планах, обсудите надёжную защиту заранее.', src: [] },
+  { id: 'p6', a: 'p', ph: 'L', tag: 'Вместе', t: 'Меньше кофе и алкоголя вместе', x: 'Кофеин и алкоголь могут усиливать ПМС. Поддержите её план и откажитесь от них вместе на эти дни.', src: ['mlp'] },
+  { id: 'p7', a: 'p', ph: 'L', tag: 'Забота', t: 'Спокойный вечер и сон', x: 'Ей нужен достаточный сон. Тихий вечер, музыка и без лишних планов помогают лучше, чем уговоры.', src: ['mlp'] },
+  { id: 'p8', a: 'p', ph: 'L', tag: 'К врачу', doc: 1, t: 'Если тяжело не проходит', x: 'Когда симптомы не отступают при самопомощи или появились стойкая грусть, раздражительность, проблемы со сном, мягко предложите поговорить с врачом.', src: ['mlp'] }
+];
+function tipsFor(aud, ph, info, dayVals) {
+  if (!ph || ph === 'N') return [];
+  var list = TIPS.filter(function (t) {
+    return t.a === aud && t.ph.indexOf(ph) >= 0;
+  });
+  var normal = list.filter(function (t) { return !t.doc; }), docs = list.filter(function (t) { return t.doc; });
+  var shift = info && info.cycleDay ? info.cycleDay % Math.max(1, normal.length) : 0;
+  normal = normal.slice(shift).concat(normal.slice(0, shift)).slice(0, 4);
+  if (aud === 's' && dayVals && dayVals.painLevel >= 7) { var hot = docs.filter(function (t) { return t.id === 's5'; }); docs = hot.concat(docs.filter(function (t) { return t.id !== 's5'; })); normal = normal.slice(0, 3); }
+  return normal.concat(docs);
+}
+function tipCard(t) {
+  var card = h('article', { class: 'tip' + (t.doc ? ' tip-doc' : '') },
+    h('span', { class: 'tag ' + (t.doc ? 'tag-warn' : ''), text: t.tag }),
+    h('h3', { text: t.t }), h('p', { text: t.x }));
+  if (t.src && t.src.length) {
+    var s = h('p', { class: 'tip-src' }, 'Источник: ');
+    t.src.forEach(function (k, i) { if (i) s.appendChild(document.createTextNode(', ')); s.appendChild(h('a', { href: SRC[k].u, target: '_blank', rel: 'noopener noreferrer', text: SRC[k].n })); });
+    card.appendChild(s);
+  }
+  return card;
+}
+function viewTips(model, info, ph) {
+  var own = model.kind === 'own', aud = own ? 's' : 'p';
+  var vals = own ? model.dayValues(E.todayStr()) : null;
+  var list = tipsFor(aud, ph, info, vals);
+  if (!list.length) return null;
+  var sec = h('section', { class: 'tips-sec', 'aria-labelledby': 'tips-h' },
+    h('div', { class: 'stack', style: 'gap:2px' }, h('h2', { id: 'tips-h', class: 'display', style: 'font-size:22px', text: own ? 'Что поможет сегодня' : 'Как поддержать её сегодня' }),
+      h('p', { class: 'muted small', text: 'Общие рекомендации из открытых медицинских источников. Они не заменяют врача.' })));
+  var row = h('div', { class: 'tips', role: 'list' });
+  list.forEach(function (t) { var c = tipCard(t); c.setAttribute('role', 'listitem'); row.appendChild(c); });
+  sec.appendChild(row);
+  return sec;
+}
+
+/* ====================== stage ====================== */
+var PREVIEW = [['', 'Сегодня'], ['M', 'Месячные'], ['F', 'Фолликулярная'], ['Ff', 'Перед овуляцией'], ['O', 'Овуляция'], ['Oa', 'Овуляция отмечена'], ['L', 'Лютеиновая'], ['Lp', 'ПМС'], ['W', 'Задержка']];
+function demoSpec(key) {
+  var ph = key === 'W' ? 'N' : key.charAt(0), f = key.slice(1);
+  var day = { M: 2, F: 8, O: 14, L: 22, N: 31 }[ph] || 14;
+  if (key === 'Ff') day = 11; if (key === 'Lp') day = 26;
+  var cond = { M: { lvl: 0.8 }, F: { lvl: 0.55 }, O: { lvl: 1 }, L: { lvl: 0.4 }, N: { lvl: 0.4 } }[ph] || { lvl: 0.5 };
+  if (key === 'Ff') cond.lvl = 0.95;
+  cond.fw = (key === 'Ff' || ph === 'O') ? 1 : 0; cond.ovA = key === 'Oa' ? 1 : 0;
+  cond.pmsK = key === 'Lp' ? 0.9 : (ph === 'L' ? 0.2 : 0); cond.late = key === 'W' ? 1 : 0;
+  cond.prog = clamp(day / 28, 0, 1);
+  return { ph: ph, day: day, cond: cond, late: key === 'W', pms: key === 'Lp', fw: !!cond.fw, ovA: !!cond.ovA };
+}
+function stageCond(model, info, ph, late) {
+  var c = { lvl: 0.5, fw: 0, ovA: 0, pmsK: 0, late: late ? 1 : 0, prog: { M: 0.1, F: 0.3, O: 0.5, L: 0.8, N: 0.5 }[ph] || 0.5 };
+  if (!info) return c;
+  var rb = model.perms.phase ? E.ribbon(model.getInfo, model.todayN) : null;
+  if (rb) c.prog = clamp(rb.day / rb.total, 0, 1); else if (info.len && info.cycleDay) c.prog = clamp(info.cycleDay / info.len, 0, 1);
+  if (late) { c.prog = 1; return c; }
+  var seg = null;
+  if (rb) rb.segs.forEach(function (s) { if (model.todayN >= s.from && model.todayN < s.from + s.len) seg = s; });
+  var within = seg ? (model.todayN - seg.from) / Math.max(1, seg.len - 1) : 0.5;
+  c.fw = info.fw ? 1 : 0; c.ovA = info.ov === 'a' ? 1 : 0;
+  if (ph === 'M') c.lvl = 1 - 0.6 * within;
+  else if (ph === 'F') c.lvl = 0.25 + 0.75 * within;
+  else if (ph === 'O') c.lvl = info.ov === 'a' ? 1 : 0.8;
+  else if (ph === 'L') { c.lvl = within; c.pmsK = info.pms ? Math.max(0.45, within) : within * 0.35; }
+  return c;
+}
+function viewStage(model) {
+  var t = model.todayN, info = model.getInfo(t), st = model.status, perms = model.perms;
+  var demo = S.demoPhase ? demoSpec(S.demoPhase) : null;
+  var late = demo ? demo.late : !!(st && st.lateDays > 0);
+  var real = late ? 'N' : (phaseKey(info, perms) || 'N');
+  var ph = demo ? demo.ph : real;
+  var pal = palFor(ph);
+  var cInfo = info, cp = perms, st2 = st;
+  if (demo) {
+    cInfo = { cycleDay: demo.day, phase: ph, period: ph === 'M' ? 'a' : null, ov: ph === 'O' ? (demo.ovA ? 'a' : 'p') : null, fw: demo.fw, pms: demo.pms, len: 28 };
+    cp = { phase: 1, period: 1, ovulation: 1, fertile: 1, pms: 1 };
+    if (demo.late) st2 = { lateDays: 3, nextStart: t - 3, daysToNext: -3, len: 28 };
+  }
+  setDropPhase(ph, demo ? demo.cond : stageCond(model, info, ph, late));
+  var prev = S.lastStage;
+  S.lastStage = { ph: ph, dark: isDark() };
+  var copy = stageCopy(model, cInfo, ph, late, st2);
+  var modes = dropModes(model, info, late && !demo, st);
+  S.dropMode = (S.dropMode || 0) % modes.length;
+  var md = modes[S.dropMode];
+  var style = '--st-a:' + pal.a + ';--st-b:' + pal.b + ';--st-ink:' + pal.ink + ';--st-dink:' + pal.dink;
+  var xf = prev && prev.ph !== ph && prev.dark === isDark();
+  if (xf) { var pp = palFor(prev.ph); style += ';--from-a:' + pp.a + ';--from-b:' + pp.b; }
+  var stage = h('section', { class: 'stage' + (xf ? ' xfade' : ''), style: style, 'aria-label': 'Главный экран цикла' });
+  stage.appendChild(h('canvas', { id: 'bg-cv', 'aria-hidden': 'true' }));
+  stage.appendChild(h('div', { class: 'stage-date', text: cap(fd('long', t)) }));
+  var wrap = h('button', { type: 'button', class: 'drop', 'aria-label': 'Капля цикла: ' + md.s + (typeof md.n === 'number' ? ' ' + md.n : '') + '. Нажми, чтобы увидеть другой показатель',
+    onpointerdown: function (e) { dropPointer(e, this, 'down'); },
+    onpointermove: function (e) { if (D.press) dropPointer(e, this, 'move'); else if (e.pointerType === 'mouse') dropPointer(e, this, 'hover'); },
+    onpointerup: dropRelease, onpointerleave: dropLeave, onpointercancel: dropLeave,
+    onclick: function () { S.dropMode = (S.dropMode + 1) % modes.length; var c = this.querySelector('.drop-c'); if (c) { c.querySelector('.num').textContent = String(modes[S.dropMode].n); c.querySelector('.lab').textContent = modes[S.dropMode].s; } } },
+    h('canvas', { id: 'drop-cv' }),
+    h('div', { class: 'drop-c' }, h('span', { class: 'num nums', text: String(md.n) }), h('span', { class: 'lab', text: md.s })));
+  stage.appendChild(wrap);
+  stage.appendChild(h('div', { class: 'stage-copy' }, h('p', { class: 'stage-k', text: copy.k }), h('h1', { class: 'stage-t', text: copy.t }), h('p', { class: 'stage-s', text: copy.s })));
+  var sec = h('div', { class: 'stack' }, stage);
+  var pv = h('div', { class: 'stack', style: 'gap:6px' }, h('div', { class: 'eyebrow', text: 'Предпросмотр фаз и условий' }));
+  var chips = h('div', { class: 'chips chips-scroll', role: 'group', 'aria-label': 'Предпросмотр сцены' });
+  PREVIEW.forEach(function (p) { chips.appendChild(btn(p[1], function () { S.demoPhase = p[0]; if (p[0]) haptic(p[0].charAt(0) === 'W' ? 'N' : p[0].charAt(0)); render(true); }, 'chip' + ((S.demoPhase || '') === p[0] ? ' on' : ''), { 'aria-pressed': pr((S.demoPhase || '') === p[0]) })); });
+  pv.appendChild(chips);
+  var thOn = uiPref('phaseTheme');
+  pv.appendChild(btn('Цвет всего приложения по фазе: ' + (thOn ? 'вкл' : 'выкл'), function () { uiSet('phaseTheme', !thOn); }, 'chip' + (thOn ? ' on' : ''), { 'aria-pressed': pr(thOn), style: 'justify-self:start' }));
+  sec.appendChild(pv);
+  if (late && !demo && model.kind === 'own') {
+    sec.appendChild(h('div', { class: 'alert' },
+      h('div', null, h('b', { text: 'Месячные уже начались?' }), ' Отметь первый день, и календарь пересчитается.'),
+      h('div', { class: 'btn-row' }, btn('Начались сегодня', function () { toggleStart(E.todayStr()); }, 'btn btn-primary btn-sm'),
+        btn('Выбрать другой день', function () { S.sel = E.fromNum(st.nextStart); render(true); }, 'btn btn-sm'))));
+  }
+  var tipsPh = ph === 'N' ? null : ph;
+  if (!demo && !tipsPh && info) tipsPh = phaseKey(info, perms);
+  var tips = viewTips(model, cInfo, tipsPh);
+  if (tips) sec.appendChild(tips);
+  if (!late && perms.phase && !demo) {
+    var rb = E.ribbon(model.getInfo, t);
+    if (rb) sec.appendChild(h('section', { class: 'card' }, h('div', { class: 'eyebrow', text: 'Этот цикл' }), viewRibbon(rb, model)));
+  }
+  return sec;
+}
+
+/* ====================== phase theme (whole interface) ====================== */
+/* Нейтрали всего интерфейса подкрашиваются под фазу. Цвета слоёв календаря (месячные, овуляция, фертильное окно, ПМС) не трогаем,
+   чтобы легенда читалась одинаково всегда. Все пары проверены на контраст (theme_check.py). */
+var THEME = {"light": {"M": {"bg": "#F9E8EC", "surface": "#FFF5F7", "surface2": "#F4DAE0", "ink": "#2B0E16", "ink2": "#5A2A38", "muted": "#76404F", "line": "#DDB4BF", "lineSoft": "#EACDD4", "btn": "#8E1A35", "onBtn": "#FFF5F7", "pa": "#B8344F", "amb1": "#FF9DB0", "amb2": "#F2B8C4"}, "F": {"bg": "#E6F6F0", "surface": "#F5FCF9", "surface2": "#D3ECE4", "ink": "#0C2E2A", "ink2": "#244B45", "muted": "#3F625C", "line": "#AFD3CA", "lineSoft": "#C8E2DB", "btn": "#0B6B61", "onBtn": "#E8FFF8", "pa": "#0F7F73", "amb1": "#6FD8C4", "amb2": "#A9E7DB"}, "O": {"bg": "#FFEFDD", "surface": "#FFF9F1", "surface2": "#FADFC0", "ink": "#3B2000", "ink2": "#5E3C12", "muted": "#775629", "line": "#E8C79D", "lineSoft": "#F1D8B8", "btn": "#7A4300", "onBtn": "#FFF0DD", "pa": "#9A5700", "amb1": "#FFC35C", "amb2": "#FFD9A8"}, "L": {"bg": "#F2E7F1", "surface": "#FAF4FA", "surface2": "#E7D7E7", "ink": "#2D1B3B", "ink2": "#4F355D", "muted": "#6A547C", "line": "#D2BCD4", "lineSoft": "#E1D0E2", "btn": "#5B418F", "onBtn": "#F6EEFF", "pa": "#6C4FA6", "amb1": "#C7A6E8", "amb2": "#EBC4D6"}}, "dark": {"M": {"bg": "#1F0A12", "surface": "#2B1019", "surface2": "#391722", "ink": "#FCEEF1", "ink2": "#EBC8D0", "muted": "#CDA0AC", "line": "#52263A", "lineSoft": "#3B1B27", "btn": "#FF9DB0", "onBtn": "#2B0B16", "pa": "#E5617D", "amb1": "#8E1A35", "amb2": "#5E1228"}, "F": {"bg": "#09201D", "surface": "#10302C", "surface2": "#183F39", "ink": "#E3FBF5", "ink2": "#B8DED5", "muted": "#8FC0B5", "line": "#265249", "lineSoft": "#1B3F39", "btn": "#7FE3CF", "onBtn": "#06302B", "pa": "#4CC3A0", "amb1": "#0B7E73", "amb2": "#14625A"}, "O": {"bg": "#261305", "surface": "#351C09", "surface2": "#47280E", "ink": "#FFF0DD", "ink2": "#F2D5B0", "muted": "#D1AC7C", "line": "#63421C", "lineSoft": "#472C12", "btn": "#FFC35C", "onBtn": "#3B2000", "pa": "#F0B93A", "amb1": "#C86F00", "amb2": "#7C4313"}, "L": {"bg": "#1B1226", "surface": "#261A33", "surface2": "#33244A", "ink": "#F1E8F8", "ink2": "#D9C8EA", "muted": "#B29CCB", "line": "#4B3969", "lineSoft": "#352649", "btn": "#C7A6E8", "onBtn": "#2D1B3B", "pa": "#AB8FE2", "amb1": "#6C4FA6", "amb2": "#4A3B70"}}};
+var THEME_VARS = { bg: '--bg', surface: '--surface', surface2: '--surface-2', ink: '--ink', ink2: '--ink-2', muted: '--muted', line: '--line', lineSoft: '--line-soft', btn: '--btn', onBtn: '--on-btn', pa: '--pa', amb1: '--amb1', amb2: '--amb2' };
+
+function appPhase() {
+  if (S.demoPhase) return S.demoPhase === 'W' ? 'N' : S.demoPhase.charAt(0);
+  var p = S.profile;
+  if (!p || !p.role) return 'N';
+  try {
+    var model;
+    if (p.role === 'tracker') {
+      if (!(p.starts || []).length) return 'N';
+      model = (S.preview && p.shareOn) ? partnerModel(buildProjection(), S.uid, true) : ownModel();
+    } else {
+      var src = partnerSources();
+      if (!src.length) return 'N';
+      var id = src.indexOf(S.partnerId) < 0 ? src[0] : S.partnerId;
+      model = partnerModel(S.shared[id], id, false);
+    }
+    var st = model.status;
+    if (st && st.lateDays > 0) return 'N';
+    return phaseKey(model.getInfo(model.todayN), model.perms) || 'N';
+  } catch (e) { return 'N'; }
+}
+function ensureAmbient() {
+  if (document.getElementById('ambient')) return;
+  var a = document.createElement('div'); a.id = 'ambient'; a.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(a);
+}
+function applyPhaseTheme(ph) {
+  var root = document.documentElement, rs = root.style, keys = Object.keys(THEME_VARS);
+  var on = uiPref('phaseTheme') && ph && ph !== 'N' && THEME.light && THEME.light[ph];
+  ensureAmbient();
+  if (!on) {
+    keys.forEach(function (k) { rs.removeProperty(THEME_VARS[k]); });
+    root.removeAttribute('data-pt');
+    return;
+  }
+  var t = THEME[isDark() ? 'dark' : 'light'][ph];
+  keys.forEach(function (k) { rs.setProperty(THEME_VARS[k], t[k]); });
+  root.setAttribute('data-pt', ph);
+}
+
+/* ====================== bottom navigation ====================== */
+var NAV_ICONS = {
+  cycle: [['path', { d: 'M12 3.2c3.6 4.4 6 7.4 6 10.8a6 6 0 0 1-12 0c0-3.4 2.4-6.4 6-10.8z' }]],
+  diary: [['path', { d: 'M6 4h10.5A2.5 2.5 0 0 1 19 6.5V20H8.5A2.5 2.5 0 0 1 6 17.5V4z' }], ['path', { d: 'M9.5 9h6M9.5 13h6' }]],
+  charts: [['path', { d: 'M4 19.5h16' }], ['path', { d: 'M5 15l4.5-5 3.5 3L19 6' }]],
+  allergens: [['path', { d: 'M12 4.2 20.5 19H3.5L12 4.2z' }], ['path', { d: 'M12 10v4' }], ['path', { d: 'M12 16.6v.1' }]],
+  setup: [['path', { d: 'M4 7h3M11 7h9M4 12h9M17 12h3M4 17h2M10 17h10' }], ['circle', { cx: 9, cy: 7, r: 2 }], ['circle', { cx: 15, cy: 12, r: 2 }], ['circle', { cx: 8, cy: 17, r: 2 }]]
+};
+function navIcon(key) {
+  var s = sv('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.9', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  NAV_ICONS[key].forEach(function (x) { s.appendChild(sv(x[0], x[1])); });
+  return s;
+}
+function viewTabbar() {
+  var role = S.profile && S.profile.role;
+  var items = [['calendar', 'cycle', role === 'partner' ? 'Её цикл' : 'Цикл'], ['diary', 'diary', 'Дневник'], ['charts', 'charts', 'Графики'], ['allergens', 'allergens', 'Аллергены'], ['setup', 'setup', 'Настройки']];
+  var row = h('div', { class: 'tabbar-in' });
+  items.forEach(function (x) {
+    var cur = S.route === x[0] || (x[0] === 'calendar' && ROUTES.indexOf(S.route) < 0);
+    var b = h('button', { type: 'button', class: 'tb', onclick: function () {
+      if (cur) { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); } return; }
+      go(x[0]);
+    } }, h('span', { class: 'tb-ic' }, navIcon(x[1])), h('span', { class: 'tb-l', text: x[2] }));
+    if (cur) b.setAttribute('aria-current', 'page');
+    row.appendChild(b);
+  });
+  return h('nav', { class: 'tabbar', 'aria-label': 'Разделы' }, row);
+}
+
+/* ====================== charts ====================== */
+FM.tick = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+S.chart = { days: 90, key: null, mkey: null };
+function niceStep(range, n) {
+  var raw = range / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / mag;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * mag;
+}
+function seriesOf(key, fromN, toN) {
+  var out = [];
+  for (var n = fromN; n <= toN; n++) {
+    var d = S.days[E.fromNum(n)], v = d && d.values && d.values[key];
+    if (typeof v === 'number' && isFinite(v)) out.push({ n: n, v: v });
+  }
+  return out;
+}
+function svgT(x, y, text, attrs) {
+  var el = sv('text', Object.assign({ x: x, y: y, style: 'fill:var(--muted)', 'font-size': 11, 'font-family': 'var(--font-body)' }, attrs || {}));
+  el.textContent = text; return el;
+}
+function chartWidth() { return clamp((window.innerWidth || 380) - 32 - 38, 260, 880); }
+function lineChart(f, pts, fromN, toN, model) {
+  var W = chartWidth(), H = 250, ml = 42, mr = 12, mt = 14, mb = 30, pw = W - ml - mr, ph = H - mt - mb;
+  var lo = Math.min.apply(null, pts.map(function (p) { return p.v; })), hi = Math.max.apply(null, pts.map(function (p) { return p.v; }));
+  if (f.type === 'scale') { lo = f.min == null ? 1 : f.min; hi = f.max || 5; }
+  else { var pad = (hi - lo) * 0.12 || Math.max(1, Math.abs(hi) * 0.02); lo -= pad; hi += pad; }
+  var step = niceStep(hi - lo, 4); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+  var X = function (n) { return ml + (n - fromN) / Math.max(1, toN - fromN) * pw; };
+  var Y = function (v) { return mt + (1 - (v - lo) / (hi - lo)) * ph; };
+  var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img', 'aria-label': f.label + ' за ' + days(toN - fromN + 1) + ': от ' + String(Math.min.apply(null, pts.map(function (p) { return p.v; }))).replace('.', ',') + ' до ' + String(Math.max.apply(null, pts.map(function (p) { return p.v; }))).replace('.', ',') + ', последнее значение ' + String(pts[pts.length - 1].v).replace('.', ',') + (f.unit ? ' ' + f.unit : '') });
+  if (model && model.kind === 'own') {
+    var cur = null, bands = [];
+    for (var n = fromN; n <= toN + 1; n++) {
+      var i = n <= toN ? model.getInfo(n) : null, k = i && i.phase && (i.phase === 'M' || i.phase === 'O' || (i.phase === 'L' && i.pms)) ? i.phase : null;
+      if (cur && cur.k !== k) { cur.to = n - 1; bands.push(cur); cur = null; }
+      if (!cur && k) cur = { k: k, from: n };
+    }
+    bands.forEach(function (b) {
+      var w = Math.max(3, X(b.to + 1) - X(b.from));
+      svg.appendChild(sv('rect', { x: X(b.from), y: mt, width: w, height: ph, style: 'fill:var(--' + (b.k === 'M' ? 'period' : b.k === 'O' ? 'ovul' : 'pms') + '-soft)' }));
+    });
+  }
+  for (var v = lo; v <= hi + step / 1000; v += step) {
+    var y = Y(v);
+    svg.appendChild(sv('line', { x1: ml, x2: W - mr, y1: y, y2: y, style: 'stroke:var(--line-soft)', 'stroke-width': 1 }));
+    svg.appendChild(svgT(ml - 6, y + 4, String(Math.round(v * 100) / 100).replace('.', ','), { 'text-anchor': 'end' }));
+  }
+  var ticks = 5;
+  for (var q = 0; q < ticks; q++) {
+    var nn = Math.round(fromN + (toN - fromN) * q / (ticks - 1));
+    svg.appendChild(svgT(X(nn), H - 8, fd('tick', nn), { 'text-anchor': q === 0 ? 'start' : q === ticks - 1 ? 'end' : 'middle' }));
+  }
+  var d = '', prev = null;
+  pts.forEach(function (p) { d += (prev && p.n - prev.n <= 7 ? ' L' : ' M') + X(p.n).toFixed(1) + ' ' + Y(p.v).toFixed(1); prev = p; });
+  svg.appendChild(sv('path', { d: d.trim(), fill: 'none', style: 'stroke:var(--ink)', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+  pts.forEach(function (p, idx) {
+    var last = idx === pts.length - 1;
+    var c = sv('circle', { cx: X(p.n), cy: Y(p.v), r: last ? 5 : 3, style: 'fill:' + (last ? 'var(--ink)' : 'var(--surface)') + ';stroke:var(--ink)', 'stroke-width': 2 });
+    c.appendChild(sv('title', {}, fd('dm', p.n) + ': ' + String(p.v).replace('.', ',') + (f.unit ? ' ' + f.unit : '')));
+    svg.appendChild(c);
+  });
+  var lp = pts[pts.length - 1], tx = X(lp.n), anchor = tx > W - 60 ? 'end' : 'middle';
+  svg.appendChild(svgT(tx, Y(lp.v) - 11, String(lp.v).replace('.', ',') + (f.unit ? ' ' + f.unit : ''), { 'text-anchor': anchor, style: 'fill:var(--ink)', 'font-weight': 600, 'font-size': 12 }));
+  return h('div', { class: 'chart-scroll' }, svg);
+}
+function cycleBars(model) {
+  var starts = E.sortedStarts(S.profile.starts || []), lens = [];
+  for (var i = 1; i < starts.length; i++) lens.push({ s: starts[i - 1], l: E.toNum(starts[i]) - E.toNum(starts[i - 1]) });
+  lens = lens.slice(-8);
+  if (!lens.length) return h('p', { class: 'muted', text: 'Нужно минимум две даты начала месячных, чтобы показать длину цикла.' });
+  var W = chartWidth(), H = 200, ml = 34, mr = 8, mt = 22, mb = 28, pw = W - ml - mr, ph = H - mt - mb;
+  var cfgLen = E.cfgOf(S.profile.cycle).cycleLen, mx = Math.max.apply(null, lens.map(function (x) { return x.l; }).concat(cfgLen)) + 4;
+  var step = niceStep(mx, 4); mx = Math.ceil(mx / step) * step;
+  var Y = function (v) { return mt + (1 - v / mx) * ph; };
+  var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img', 'aria-label': 'Длина последних циклов: ' + lens.map(function (x) { return x.l; }).join(', ') + ' дней; заданная длина ' + cfgLen });
+  for (var v = 0; v <= mx; v += step) { svg.appendChild(sv('line', { x1: ml, x2: W - mr, y1: Y(v), y2: Y(v), style: 'stroke:var(--line-soft)' })); svg.appendChild(svgT(ml - 6, Y(v) + 4, String(v), { 'text-anchor': 'end' })); }
+  var bw = Math.min(40, pw / lens.length * 0.62), gap = pw / lens.length;
+  lens.forEach(function (x, i) {
+    var cx = ml + gap * (i + 0.5), ok = x.l >= 21 && x.l <= 35;
+    svg.appendChild(sv('rect', { x: cx - bw / 2, y: Y(x.l), width: bw, height: Y(0) - Y(x.l), rx: 4, style: 'fill:' + (ok ? 'var(--pa)' : 'var(--sev2)') }));
+    svg.appendChild(svgT(cx, Y(x.l) - 6, String(x.l), { 'text-anchor': 'middle', style: 'fill:var(--ink)', 'font-weight': 600 }));
+    svg.appendChild(svgT(cx, H - 8, fd('tick', E.toNum(x.s)), { 'text-anchor': 'middle', 'font-size': 10 }));
+  });
+  svg.appendChild(sv('line', { x1: ml, x2: W - mr, y1: Y(cfgLen), y2: Y(cfgLen), style: 'stroke:var(--ink)', 'stroke-dasharray': '5 4', 'stroke-width': 1.5 }));
+  svg.appendChild(svgT(W - mr, Y(cfgLen) - 5, 'задано ' + cfgLen, { 'text-anchor': 'end', style: 'fill:var(--ink)', 'font-size': 11 }));
+  return h('div', { class: 'chart-scroll' }, svg);
+}
+function freqList(f, fromN, toN) {
+  var cnt = {}, total = 0;
+  for (var n = fromN; n <= toN; n++) {
+    var d = S.days[E.fromNum(n)], v = d && d.values && d.values[f.key];
+    if (v == null) continue;
+    (Array.isArray(v) ? v : [v]).forEach(function (o) { cnt[o] = (cnt[o] || 0) + 1; total++; });
+  }
+  var rows = Object.keys(cnt).map(function (k) { return [k, cnt[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 8);
+  if (!rows.length) return h('p', { class: 'muted', text: 'За выбранный период по этому полю нет записей.' });
+  var mx = rows[0][1], box = h('div', { class: 'freq' });
+  rows.forEach(function (r) {
+    var bar = h('div', { class: 'freq-bar' }); bar.appendChild(h('i', { style: 'width:' + (r[1] / mx * 100) + '%' }));
+    box.appendChild(h('div', { class: 'freq-row' }, h('span', { text: r[0] }), bar, h('b', { class: 'nums', text: String(r[1]) })));
+  });
+  return box;
+}
+function viewCharts() {
+  var role = S.profile.role, ch = S.chart, t = E.toNum(E.todayStr()), fromN = t - ch.days + 1;
+  var sec = h('section', { class: 'stack' }, h('div', { class: 'eyebrow', text: 'Динамика' }),
+    h('h1', { class: 'display', style: 'font-size:clamp(26px,5vw,34px);letter-spacing:-0.02em', text: 'Графики' }));
+  var range = h('div', { class: 'chips', role: 'group', 'aria-label': 'Период' });
+  [30, 90, 180].forEach(function (d) { range.appendChild(btn(d + ' дн.', function () { ch.days = d; render(true); }, 'chip' + (ch.days === d ? ' on' : ''), { 'aria-pressed': pr(ch.days === d) })); });
+  sec.appendChild(range);
+  var fields = activeFields(), nums = fields.filter(function (f) { return f.type === 'number' || f.type === 'scale'; }).filter(function (f) { return seriesOf(f.key, fromN, t).length > 0; });
+  var card = h('section', { class: 'card' }, h('h2', { text: 'Показатели' }));
+  if (!nums.length) {
+    card.appendChild(h('p', { class: 'lead', text: 'Пока нечего рисовать. Отмечай вес, сон, температуру, энергию или боль в дневнике, и здесь появится линия.' }));
+    card.appendChild(h('div', { class: 'btn-row' }, btn('Открыть дневник', function () { go('diary'); }, 'btn btn-primary')));
+  } else {
+    if (!nums.some(function (f) { return f.key === ch.key; })) ch.key = nums[0].key;
+    var cc = h('div', { class: 'chips', role: 'group', 'aria-label': 'Показатель' });
+    nums.forEach(function (f) { cc.appendChild(btn(f.label, function () { ch.key = f.key; render(true); }, 'chip' + (ch.key === f.key ? ' on' : ''), { 'aria-pressed': pr(ch.key === f.key) })); });
+    card.appendChild(cc);
+    var f0 = nums.filter(function (f) { return f.key === ch.key; })[0], pts = seriesOf(f0.key, fromN, t);
+    var model = role === 'tracker' && (S.profile.starts || []).length ? ownModel() : null;
+    card.appendChild(lineChart(f0, pts, fromN, t, model));
+    if (model) card.appendChild(h('div', { class: 'chips small', 'aria-hidden': 'true' },
+      h('span', { class: 'tag tag-ph-M', text: 'месячные' }), h('span', { class: 'tag tag-ph-O', text: 'овуляция' }), h('span', { class: 'tag tag-ph-L', text: 'ПМС' })));
+    card.appendChild(h('p', { class: 'help', text: 'Значений в периоде: ' + pts.length + '. Разрывы между отметками не соединяются, если пауза больше недели.' }));
+  }
+  sec.appendChild(card);
+  if (role === 'tracker') sec.appendChild(h('section', { class: 'card' }, h('h2', { text: 'Длина циклов' }), cycleBars(), h('p', { class: 'help', text: 'Янтарным цветом отмечены циклы короче 21 или длиннее 35 дней. Это повод сверить даты, а не диагноз.' })));
+  var multi = fields.filter(function (f) { return (f.type === 'multi' || f.type === 'choice') && !f.cycle || (f.type === 'multi' || f.type === 'choice') && role === 'tracker'; });
+  multi = multi.filter(function (f) { for (var n = fromN; n <= t; n++) { var d = S.days[E.fromNum(n)]; if (d && d.values && d.values[f.key] != null) return true; } return false; });
+  if (multi.length) {
+    if (!multi.some(function (f) { return f.key === ch.mkey; })) ch.mkey = multi[0].key;
+    var mc = h('div', { class: 'chips', role: 'group', 'aria-label': 'Поле для подсчёта' });
+    multi.forEach(function (f) { mc.appendChild(btn(f.label, function () { ch.mkey = f.key; render(true); }, 'chip' + (ch.mkey === f.key ? ' on' : ''), { 'aria-pressed': pr(ch.mkey === f.key) })); });
+    var fm = multi.filter(function (f) { return f.key === ch.mkey; })[0];
+    sec.appendChild(h('section', { class: 'card' }, h('h2', { text: 'Что отмечалось чаще всего' }), mc, freqList(fm, fromN, t)));
+  }
+  return sec;
+}
+
+/* ====================== appearance card ====================== */
+function uiSet(k, v) { saveProfile({ ui: Object.assign({}, (S.profile && S.profile.ui) || {}, (function () { var o = {}; o[k] = v; return o; })()) }); D.dirty = true; }
+function appearanceCard() {
+  var card = h('section', { class: 'card' }, h('h2', { text: 'Внешний вид и отклик' }),
+    h('p', { class: 'lead', text: 'Капля на главном экране живая: пульсирует в ритме фазы и реагирует на касание.' }));
+  card.appendChild(swRow('sw-phase', uiPref('phaseTheme'), 'Цвет всего приложения по фазе', 'Фон, карточки и кнопки подкрашиваются под текущую фазу цикла. Цвета слоёв календаря не меняются, чтобы легенда читалась всегда.', function (v) { uiSet('phaseTheme', v); }));
+  card.appendChild(swRow('sw-motion', uiPref('motion'), 'Анимация капли', reducedMotion() && uiPref('motion') ? 'Сейчас отключена системной настройкой «уменьшить движение».' : 'Выключи, и капля станет неподвижной.', function (v) { uiSet('motion', v); }));
+  card.appendChild(swRow('sw-haptics', uiPref('haptics'), 'Тактильный отклик', 'Короткая вибрация при касании капли и смене фазы. Работает только на телефонах с вибромотором.', function (v) { uiSet('haptics', v); if (v) haptic(D.phase, true); }));
+  return card;
+}
+
+/* ====================== settings ====================== */
+var TYPE_LABEL = { scale: 'шкала', number: 'число', text: 'текст', choice: 'один вариант', multi: 'несколько вариантов' };
+var openOpts = {};
+
+function sw(id, on, label, fn) {
+  return h('button', { type: 'button', role: 'switch', id: id, class: 'switch', 'aria-checked': pr(on), 'aria-label': label, onclick: function () { fn(!on); } }, h('span', { class: 'knob' }));
+}
+function swRow(id, on, title, desc, fn) {
+  return h('div', { class: 'swrow' }, h('div', { class: 'swtext' }, h('b', { text: title }), desc ? h('span', { class: 'help', text: desc }) : null), sw(id, on, title, fn));
+}
+function cycleSet(patch, quiet) {
+  saveProfile({ cycle: Object.assign({}, S.profile.cycle || {}, patch) }, quiet);
+  if (quiet) updateReadout();
+}
+function updateReadout() { var el = $('#readout'); if (el) el.replaceWith(readoutNode()); }
+function stepRow(id, label, help, val, min, max, onSet, suffix) {
+  var inp = h('input', { id: id, type: 'text', inputmode: 'numeric', autocomplete: 'off', value: String(val), 'aria-label': label,
+    oninput: function () { var x = parseInt(this.value, 10); if (!isNaN(x) && x >= min && x <= max) onSet(x, true); },
+    onchange: function () { var x = parseInt(this.value, 10); if (isNaN(x)) x = val; onSet(clamp(x, min, max), false); } });
+  return h('div', { class: 'frow' },
+    h('label', { class: 'lbl', 'for': id, text: label }),
+    help ? h('p', { class: 'help', text: help }) : null,
+    h('div', { class: 'stepper' },
+      btn('−', function () { onSet(clamp(val - 1, min, max), false); }, 'step', { 'aria-label': 'Меньше: ' + label }), inp,
+      btn('+', function () { onSet(clamp(val + 1, min, max), false); }, 'step', { 'aria-label': 'Больше: ' + label }),
+      suffix ? h('span', { class: 'suffix', text: suffix }) : null));
+}
+function setRole(role) {
+  if (S.profile.role === role) return;
+  S.preview = false;
+  if (role !== 'tracker' && S.profile.shareOn) { saveProfile({ role: role, shareOn: false }); clearTimeout(S.syncT); syncShared(); }
+  else saveProfile({ role: role });
+}
+function setFieldCfg(f, patch) {
+  if (f.builtin) {
+    var cfg = Object.assign({}, S.profile.fieldCfg || {});
+    cfg[f.key] = Object.assign({}, cfg[f.key] || {}, patch);
+    saveProfile({ fieldCfg: cfg });
+  } else {
+    saveProfile({ custom: (S.profile.custom || []).map(function (x) { return x.key === f.key ? Object.assign({}, x, patch) : x; }) });
+  }
+}
+
+function readoutNode() {
+  var p = S.profile, cfg = E.cfgOf(p.cycle), pn = E.plan(cfg, p.starts || []);
+  var lines = [
+    'Цикл ' + days(pn.len) + (pn.auto ? ' (среднее по истории)' : '') + ', месячные ' + days(pn.periodLen) + '.',
+    'Овуляция на ' + pn.ovDay + '-й день цикла, лютеиновая фаза ' + days(pn.luteal) + '.',
+    'Фертильное окно: дни ' + pn.fwFrom + '–' + pn.fwTo + ' цикла.',
+    pn.pmsFrom ? 'ПМС: с ' + pn.pmsFrom + '-го дня цикла.' : 'ПМС не отмечается.'
+  ];
+  var box = h('div', { id: 'readout', class: 'result', 'aria-live': 'polite' },
+    h('div', { class: 'eyebrow', text: 'Что получается при этих параметрах' }),
+    lines.map(function (l) { return h('div', { text: l }); }));
+  if ((p.starts || []).length) {
+    var m = ownModel(), t = m.todayN;
+    var ov = E.firstRun(m.getInfo, 'ov', t, 150), pe = E.firstRun(m.getInfo, 'period', t, 150), bits = [];
+    if (ov) bits.push('ближайшая овуляция ' + fd('dm', ov.start) + (ov.now ? ' (сегодня)' : ''));
+    if (pe && !pe.now) bits.push('следующие месячные ' + fd('dm', pe.start));
+    if (bits.length) box.appendChild(h('div', { class: 'small', style: 'margin-top:4px', text: 'По датам: ' + bits.join(', ') + '.' }));
+  }
+  return box;
+}
+
+function roleCard() {
+  return h('section', { class: 'card' }, h('h2', { text: 'Моя роль' }),
+    h('div', { class: 'seg', role: 'group', 'aria-label': 'Роль' },
+      btn('Веду цикл', function () { setRole('tracker'); }, null, { 'aria-pressed': pr(S.profile.role === 'tracker') }),
+      btn('Партнёр', function () { setRole('partner'); }, null, { 'aria-pressed': pr(S.profile.role === 'partner') })),
+    h('p', { class: 'help', text: 'При смене роли данные не удаляются. Если ты ведёшь цикл и переключаешься на партнёра, доступ к твоему циклу выключится.' }));
+}
+function cycleCard() {
+  var p = S.profile, c = E.cfgOf(p.cycle);
+  var card = h('section', { class: 'card' }, h('h2', { text: 'Параметры цикла' }),
+    h('p', { class: 'lead', text: 'Каждое число задаёшь ты. Календарь и прогнозы пересчитываются сразу.' }),
+    readoutNode());
+  card.appendChild(stepRow('st-cycle', 'Длина цикла', 'От первого дня месячных до первого дня следующих.', c.cycleLen, 18, 60, function (v, q) { cycleSet({ cycleLen: v }, q); }, 'дн.'));
+  card.appendChild(swRow('sw-auto', !!c.autoLen, 'Считать длину цикла по моей истории', 'Берётся среднее по последним циклам. Нужно минимум три даты начала месячных, иначе действует число выше.', function (v) { cycleSet({ autoLen: v }); }));
+  card.appendChild(stepRow('st-period', 'Длительность месячных', null, c.periodLen, 1, 14, function (v, q) { cycleSet({ periodLen: v }, q); }, 'дн.'));
+  card.appendChild(h('div', { class: 'frow' }, h('div', { class: 'lbl', text: 'Как определяется овуляция' }),
+    h('div', { class: 'seg', role: 'group', 'aria-label': 'Способ расчёта овуляции' },
+      btn('От конца цикла', function () { cycleSet({ ovMode: 'luteal' }); }, null, { 'aria-pressed': pr(c.ovMode !== 'day') }),
+      btn('Конкретный день', function () { cycleSet({ ovMode: 'day' }); }, null, { 'aria-pressed': pr(c.ovMode === 'day') })),
+    h('p', { class: 'help', text: c.ovMode === 'day' ? 'Овуляция всегда выпадает на выбранный день цикла.' : 'Овуляция считается за заданное число дней до следующих месячных.' })));
+  if (c.ovMode === 'day') card.appendChild(stepRow('st-ovday', 'День цикла, на который выпадает овуляция', null, c.ovDay, 6, 45, function (v, q) { cycleSet({ ovDay: v }, q); }, '-й день'));
+  else card.appendChild(stepRow('st-luteal', 'Лютеиновая фаза', 'Сколько дней проходит от овуляции до следующих месячных. Обычно 12–16.', c.lutealLen, 8, 18, function (v, q) { cycleSet({ lutealLen: v }, q); }, 'дн.'));
+  card.appendChild(stepRow('st-fwb', 'Фертильное окно: дней до овуляции', null, c.fertileBefore, 0, 10, function (v, q) { cycleSet({ fertileBefore: v }, q); }, 'дн.'));
+  card.appendChild(stepRow('st-fwa', 'Фертильное окно: дней после овуляции', null, c.fertileAfter, 0, 5, function (v, q) { cycleSet({ fertileAfter: v }, q); }, 'дн.'));
+  card.appendChild(stepRow('st-pms', 'ПМС: сколько последних дней цикла отмечать', '0 отключает отметку.', c.pmsDays, 0, 10, function (v, q) { cycleSet({ pmsDays: v }, q); }, 'дн.'));
+  card.appendChild(swRow('sw-recalc', c.recalc !== false, 'Пересчитывать цикл по фактической овуляции', 'Если ты отметила овуляцию вручную, дата следующих месячных сдвигается от неё.', function (v) { cycleSet({ recalc: v }); }));
+  var names = h('div', { class: 'frow' }, h('div', { class: 'lbl', text: 'Названия фаз' }), h('p', { class: 'help', text: 'Можно оставить пустым, тогда будут стандартные.' }));
+  ['M', 'F', 'O', 'L'].forEach(function (k) {
+    names.appendChild(h('div', { style: 'margin-top:8px' },
+      h('label', { class: 'help', 'for': 'nm-' + k, text: DEFAULT_NAMES[k] }),
+      h('input', { id: 'nm-' + k, type: 'text', class: 'inp', maxlength: '40', placeholder: DEFAULT_NAMES[k], value: (p.cycle && p.cycle.names && p.cycle.names[k]) || '',
+        oninput: function () {
+          var nm = Object.assign({}, (S.profile.cycle && S.profile.cycle.names) || {}), v = this.value.trim();
+          if (v) nm[k] = v; else delete nm[k];
+          cycleSet({ names: nm }, true);
+        } })));
+  });
+  card.appendChild(names);
+  return card;
+}
+function historyCard() {
+  var starts = E.sortedStarts(S.profile.starts || []);
+  var card = h('section', { class: 'card' }, h('h2', { text: 'Даты начала месячных' }),
+    h('p', { class: 'lead', text: 'Чем больше циклов в истории, тем точнее среднее. Любую дату можно убрать.' }));
+  var list = h('div', { class: 'stack', style: 'gap:0' });
+  starts.slice().reverse().forEach(function (s) {
+    var i = starts.indexOf(s), len = i > 0 ? E.toNum(s) - E.toNum(starts[i - 1]) : null;
+    list.appendChild(h('div', { class: 'swrow', style: 'align-items:center' },
+      h('div', { class: 'swtext' }, h('b', { text: cap(fd('long', E.toNum(s))) }), len ? h('span', { class: 'help', text: 'предыдущий цикл ' + days(len) }) : null),
+      btn('Убрать', function () { toggleStart(s); }, 'btn btn-sm btn-danger')));
+  });
+  if (!starts.length) list.appendChild(h('p', { class: 'muted', text: 'Пока ни одной даты.' }));
+  card.appendChild(list);
+  card.appendChild(h('div', { class: 'frow' },
+    h('label', { class: 'lbl', 'for': 'hs-new', text: 'Добавить дату' }),
+    h('div', { class: 'btn-row' },
+      h('input', { id: 'hs-new', type: 'date', class: 'inp', style: 'max-width:200px', max: E.todayStr(), value: S.newStart, oninput: function () { S.newStart = this.value; } }),
+      btn('Добавить', function () {
+        var v = S.newStart;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) { toast('Выбери дату', true); return; }
+        if ((S.profile.starts || []).indexOf(v) >= 0) { toast('Эта дата уже есть'); return; }
+        S.newStart = ''; toggleStart(v);
+      }, 'btn btn-primary'))));
+  return card;
+}
+function shareSummary(perms) {
+  var layers = [['phase', 'фазу и день цикла'], ['period', 'месячные'], ['ovulation', 'овуляцию'], ['fertile', 'фертильное окно'], ['pms', 'ПМС']]
+    .filter(function (x) { return perms[x[0]]; }).map(function (x) { return x[1]; });
+  var fields = allFields().filter(function (f) { return f.enabled && f.share; }).map(function (f) { return f.label.toLowerCase(); });
+  var parts = [];
+  parts.push(layers.length ? 'Календарь: ' + layers.join(', ') + '.' : 'Календарь: ничего не открыто.');
+  parts.push(fields.length ? 'Дневник: ' + fields.join(', ') + '.' : 'Дневник: ничего не открыто.');
+  return parts;
+}
+function shareCard() {
+  var p = S.profile, perms = p.perms || {};
+  var card = h('section', { class: 'card' }, h('h2', { text: 'Доступ партнёра' }),
+    h('p', { class: 'lead', text: 'По умолчанию партнёр не видит ничего. Ты включаешь доступ и сама выбираешь каждый слой. Выключатель сразу убирает опубликованную копию.' }));
+  card.appendChild(swRow('sw-share', !!p.shareOn, 'Показывать мои данные партнёру', 'Партнёр увидит только то, что отмечено ниже.', function (v) {
+    saveProfile({ shareOn: v });
+    if (!v) { S.preview = false; clearTimeout(S.syncT); syncShared(); }
+  }));
+  if (p.shareOn) {
+    [['phase', 'Фаза и день цикла', 'Например: лютеиновая фаза, день 21.'], ['period', 'Месячные', 'Прошедшие дни и прогноз.'], ['ovulation', 'Овуляция', 'День овуляции, отмеченный и расчётный.'],
+     ['fertile', 'Фертильное окно', 'Подсветка дней.'], ['pms', 'ПМС', 'Дни перед месячными.']].forEach(function (x) {
+      card.appendChild(swRow('sw-perm-' + x[0], !!perms[x[0]], x[1], x[2], function (v) {
+        var np = Object.assign({}, S.profile.perms || {}); np[x[0]] = v; saveProfile({ perms: np });
+      }));
+    });
+    var res = h('div', { class: 'result' }, h('div', { class: 'eyebrow', text: 'Сейчас партнёр видит' }), shareSummary(perms).map(function (l) { return h('div', { text: l }); }));
+    card.appendChild(res);
+    card.appendChild(h('div', { class: 'btn-row' }, btn('Посмотреть глазами партнёра', function () { S.preview = true; go('calendar'); }, 'btn')));
+  }
+  card.appendChild(inviteCard());
+  card.appendChild(h('p', { class: 'help', text: 'Открытые данные лежат в общей копии, которую может прочитать любой, у кого есть доступ к этой странице. Приглашай только партнёра. Поля дневника открываются отдельно, в разделе «Поля дневника» ниже.' }));
+  return card;
+}
+function partnerInfoCard() {
+  var src = partnerSources(); wantNames(src);
+  return h('section', { class: 'card' }, h('h2', { text: 'Данные партнёрши' }),
+    h('p', { class: 'lead', text: src.length ? 'Доступ открыт: ' + src.map(function (i) { return S.names[i] || 'партнёрша'; }).join(', ') + '. Календарь во вкладке «Её цикл».' : 'Доступ пока не открыт. Она включает его у себя в настройках, в разделе «Доступ партнёра», и сама выбирает, что показывать.' }));
+}
+
+function optionsEditor(f) {
+  var d = h('details', { class: 'opts' });
+  if (openOpts[f.key]) d.setAttribute('open', '');
+  d.addEventListener('toggle', function () { openOpts[f.key] = d.open; });
+  d.appendChild(h('summary', { class: 'small', style: 'cursor:pointer;padding:6px 0', text: 'Варианты ответа (' + f.options.length + ')' }));
+  var chips = h('div', { class: 'chips', style: 'margin:8px 0' });
+  f.options.forEach(function (o) {
+    chips.appendChild(btn(o + ' ×', function () { setFieldCfg(f, { options: f.options.filter(function (x) { return x !== o; }) }); }, 'chip chip-x', { 'aria-label': 'Убрать вариант ' + o }));
+  });
+  d.appendChild(chips);
+  var doAdd = function () {
+    var el = document.getElementById('oe-' + f.key), tx = el ? el.value.trim() : '';
+    if (tx && f.options.indexOf(tx) < 0) setFieldCfg(f, { options: f.options.concat(tx) });
+  };
+  d.appendChild(h('div', { class: 'addopt' },
+    h('input', { id: 'oe-' + f.key, type: 'text', class: 'inp', placeholder: 'Новый вариант…', 'aria-label': 'Новый вариант для поля ' + f.label, onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } } }),
+    btn('Добавить', doAdd, 'btn btn-sm')));
+  return d;
+}
+function fieldRow(f, tracker) {
+  var row = h('div', { class: 'frow' });
+  row.appendChild(h('div', { class: 'swrow', style: 'border-top:0;padding:0;align-items:center' },
+    h('div', { class: 'swtext' }, h('b', { text: f.label }), h('span', { class: 'help', text: TYPE_LABEL[f.type] + (f.unit ? ', ' + f.unit : '') + (f.cycle ? ', про цикл' : '') })),
+    sw('sw-f-' + f.key, f.enabled, 'Включить поле: ' + f.label, function (v) { setFieldCfg(f, { enabled: v }); })));
+  if (f.enabled && tracker && S.profile.shareOn) row.appendChild(swRow('sw-s-' + f.key, f.share, 'Показывать партнёру', null, function (v) { setFieldCfg(f, { share: v }); }));
+  if (f.enabled && (f.type === 'choice' || f.type === 'multi')) row.appendChild(optionsEditor(f));
+  if (!f.builtin) {
+    if (S.delField === f.key) {
+      row.appendChild(h('div', { class: 'btn-row' }, h('span', { class: 'small', text: 'Убрать поле из дневника? Старые значения скроются.' }),
+        btn('Да, убрать', function () { S.delField = null; saveProfile({ custom: (S.profile.custom || []).filter(function (x) { return x.key !== f.key; }) }); }, 'btn btn-sm btn-danger'),
+        btn('Отмена', function () { S.delField = null; render(true); }, 'btn btn-sm')));
+    } else row.appendChild(h('div', { class: 'btn-row' }, btn('Удалить поле', function () { S.delField = f.key; render(true); }, 'btn btn-sm btn-quiet')));
+  }
+  return row;
+}
+function newFieldForm() {
+  var nf = S.nf, typeSel = h('select', { id: 'nf-type', class: 'sel', 'aria-label': 'Тип поля', onchange: function () { nf.type = this.value; render(true); } });
+  [['multi', 'Несколько вариантов'], ['choice', 'Один вариант'], ['number', 'Число'], ['scale', 'Шкала'], ['text', 'Текст']].forEach(function (o) {
+    var op = h('option', { value: o[0], text: o[1] }); if (nf.type === o[0]) op.selected = true; typeSel.appendChild(op);
+  });
+  var f = h('div', { class: 'frow' }, h('h3', { class: 'display', style: 'font-size:18px', text: 'Новое поле' }),
+    h('div', null, h('label', { class: 'lbl', 'for': 'nf-label', text: 'Название' }), h('input', { id: 'nf-label', type: 'text', class: 'inp', maxlength: '60', placeholder: 'Например: давление, головокружение, кофе', value: nf.label, oninput: function () { nf.label = this.value; } })),
+    h('div', null, h('label', { class: 'lbl', 'for': 'nf-type', text: 'Тип' }), typeSel));
+  if (nf.type === 'number') f.appendChild(h('div', null, h('label', { class: 'lbl', 'for': 'nf-unit', text: 'Единица (необязательно)' }), h('input', { id: 'nf-unit', type: 'text', class: 'inp', maxlength: '12', placeholder: 'мм рт. ст., шагов, чашек', value: nf.unit, oninput: function () { nf.unit = this.value; } })));
+  if (nf.type === 'multi' || nf.type === 'choice') f.appendChild(h('div', null, h('label', { class: 'lbl', 'for': 'nf-opts', text: 'Варианты через запятую' }), h('input', { id: 'nf-opts', type: 'text', class: 'inp', placeholder: 'утро, день, вечер', value: nf.opts, oninput: function () { nf.opts = this.value; } })));
+  if (nf.type === 'scale') f.appendChild(h('div', null, h('div', { class: 'lbl', text: 'Шкала' }), h('div', { class: 'seg', role: 'group', 'aria-label': 'Размер шкалы' },
+    btn('1–5', function () { nf.max = '5'; render(true); }, null, { 'aria-pressed': pr(nf.max === '5') }), btn('1–10', function () { nf.max = '10'; render(true); }, null, { 'aria-pressed': pr(nf.max === '10') }))));
+  f.appendChild(h('div', { class: 'btn-row' }, btn('Добавить поле', function () {
+    var label = nf.label.trim();
+    if (!label) { toast('Укажи название поля', true); return; }
+    var fld = { key: 'c_' + rid(), label: label, type: nf.type, enabled: true, share: false };
+    if (nf.type === 'number' && nf.unit.trim()) fld.unit = nf.unit.trim();
+    if (nf.type === 'multi' || nf.type === 'choice') fld.options = nf.opts.split(/[,;]/).map(function (x) { return x.trim(); }).filter(Boolean);
+    if (nf.type === 'scale') { fld.min = 1; fld.max = +nf.max; }
+    S.nf = { label: '', type: nf.type, unit: '', opts: '', max: '5' };
+    saveProfile({ custom: (S.profile.custom || []).concat(fld) });
+    toast('Поле добавлено в дневник');
+  }, 'btn btn-primary')));
+  return f;
+}
+function fieldsCard() {
+  var tracker = S.profile.role === 'tracker';
+  var card = h('section', { class: 'card' }, h('h2', { text: 'Поля дневника' }),
+    h('p', { class: 'lead', text: 'Включай нужное, правь варианты и добавляй свои поля: давление, антигистаминные, симптомы по времени суток, что угодно.' }));
+  allFields().filter(function (f) { return tracker || !f.cycle; }).forEach(function (f) { card.appendChild(fieldRow(f, tracker)); });
+  card.appendChild(newFieldForm());
+  return card;
+}
+function exportData() {
+  var out = { exportedAt: new Date().toISOString(), role: S.profile.role, profile: S.profile, days: S.days, allergens: S.allergens };
+  S.dlNS.save({ filename: 'cikl-na-dvoih-' + E.todayStr() + '.json', data: JSON.stringify(out, null, 2) })
+    .then(function () { toast('Файл сохранён'); })
+    .catch(function (e) { if (!e || e.code !== 'declined') toast('Не удалось сохранить файл', true); });
+}
+function dataCard() {
+  var card = h('section', { class: 'card' }, h('h2', { text: 'Доступ к странице и данные' }),
+    h('p', { class: 'lead', text: 'Чтобы партнёр мог открыть приложение, добавь его через меню «Поделиться» у этой страницы. Для записи аллергенов и загрузки фото ему нужен доступ с правом изменять.' }));
+  card.appendChild(S.dlNS ? h('div', { class: 'btn-row' }, btn('Скачать мои данные (JSON)', exportData, 'btn')) : h('p', { class: 'help', text: 'Скачивание недоступно в этом режиме просмотра.' }));
+  return card;
+}
+function viewSetup() {
+  var tracker = S.profile.role === 'tracker';
+  var sec = h('section', { class: 'stack' }, h('h1', { class: 'display', style: 'font-size:clamp(26px,5vw,34px);letter-spacing:-0.02em', text: 'Настройки' }), roleCard());
+  if (tracker) { sec.appendChild(cycleCard()); sec.appendChild(historyCard()); sec.appendChild(shareCard()); } else sec.appendChild(partnerInfoCard());
+  sec.appendChild(fieldsCard());
+  sec.appendChild(appearanceCard());
+  sec.appendChild(dataCard());
+  return sec;
+}
+
+/* ====================== allergens ====================== */
+function norm(s) { return String(s || '').toLowerCase().replace(/ё/g, 'е'); }
+function stem(w) { var L = w.length; if (L > 6) return w.slice(0, L - 2); if (L > 4) return w.slice(0, L - 1); return w; }
+function hasTerm(text, word) {
+  var st = stem(norm(word).replace(/[^a-zа-я0-9]/g, ''));
+  if (!st) return true;
+  return new RegExp('(^|[^a-zа-я0-9])' + st).test(text);
+}
+function allergenTerms(a) {
+  return [a.name].concat(String(a.aka || '').split(/[,;\n]/)).map(function (x) { return x.trim(); }).filter(Boolean);
+}
+function sevBadge(n) { return h('span', { class: 'sev sev' + (n || 1), text: SEV_LABEL[n || 1] }); }
+function thumbImg(id, alt) {
+  var img = h('img', { src: '/_blob/' + id, alt: alt, loading: 'lazy' });
+  img.addEventListener('error', function () { var p = img.parentNode; if (p) p.textContent = 'Фото недоступно'; });
+  return img;
+}
+function refreshList() { var el = $('#al-list'); if (el) el.replaceWith(allergenList()); }
+function checkResultNode() {
+  var text = norm(S.checkText), box = h('div', { id: 'check-result', class: 'result', 'aria-live': 'polite' });
+  if (!text.trim()) { box.appendChild(h('span', { class: 'muted', text: 'Вставь состав, и совпадения с вашим списком будут отмечены.' })); return box; }
+  var hits = S.allergens.filter(function (a) { return allergenTerms(a).some(function (t) { return t.split(/\s+/).every(function (w) { return hasTerm(text, w); }); }); });
+  if (!hits.length) { box.appendChild(h('span', { text: 'Совпадений со списком не найдено. Это не гарантия: на упаковках названия бывают другими, перечитай состав сама.' })); return box; }
+  box.className = 'result hit';
+  box.appendChild(h('b', { text: 'Совпадения со списком: ' + hits.length }));
+  hits.forEach(function (a) { box.appendChild(h('div', null, sevBadge(a.sev), ' ' + a.name)); });
+  return box;
+}
+function viewCheck() {
+  var box = h('div', { class: 'checkbox' },
+    h('div', { class: 'row', style: 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' },
+      h('div', null, h('b', { text: 'Проверить состав с упаковки' }), h('div', { class: 'help', text: 'Вставь список ингредиентов, и приложение найдёт совпадения со списком аллергенов.' })),
+      btn(S.checkOpen ? 'Свернуть' : 'Проверить', function () { S.checkOpen = !S.checkOpen; render(true); }, 'btn btn-sm')));
+  if (S.checkOpen) {
+    box.appendChild(h('textarea', { id: 'al-check', class: 'ta', rows: '3', placeholder: 'Например: мука пшеничная, молоко сухое, лецитин соевый, ароматизатор…', 'aria-label': 'Состав продукта', value: S.checkText,
+      oninput: function () { S.checkText = this.value; var r = $('#check-result'); if (r) r.replaceWith(checkResultNode()); } }));
+    box.appendChild(checkResultNode());
+  }
+  return box;
+}
+function allergenCard(a) {
+  var card = h('article', { class: 'acard s' + (a.sev || 1) });
+  card.appendChild(h('div', { class: 'row' }, h('h3', { text: a.name }), sevBadge(a.sev)));
+  var meta = []; if (a.cat) meta.push(a.cat); if (a.confirmed) meta.push('подтверждено врачом или анализом');
+  if (meta.length) card.appendChild(h('p', { class: 'muted small', text: meta.join(' · ') }));
+  if (a.reaction) card.appendChild(h('p', { text: a.reaction }));
+  if (a.aka) {
+    var tg = h('div', { class: 'chips' });
+    allergenTerms(a).slice(1).forEach(function (x) { tg.appendChild(h('span', { class: 'tag', text: x })); });
+    if (tg.childNodes.length) card.appendChild(h('div', { class: 'stack', style: 'gap:6px' }, h('div', { class: 'eyebrow', text: 'Может называться или прятаться как' }), tg));
+  }
+  if (a.safe) card.appendChild(h('p', { class: 'small' }, h('b', { text: 'Чем заменить: ' }), a.safe));
+  if (a.notes) card.appendChild(h('p', { class: 'muted small', text: a.notes }));
+  var ph = a.photos || [];
+  if (ph.length) {
+    var grid = h('div', { class: 'photos' });
+    ph.slice(0, 6).forEach(function (id, i) {
+      grid.appendChild(h('button', { type: 'button', class: 'thumb', 'aria-label': 'Открыть фото ' + (i + 1) + ': ' + a.name, onclick: function () { S.lightbox = { ids: ph.slice(), i: i, title: a.name }; render(true); } }, thumbImg(id, 'Фото: ' + a.name)));
+    });
+    card.appendChild(grid);
+    if (ph.length > 6) card.appendChild(h('p', { class: 'small muted', text: 'Ещё фото: ' + (ph.length - 6) + '. Они в режиме правки.' }));
+  }
+  card.appendChild(h('div', { class: 'row' },
+    h('span', { class: 'small muted', text: a.addedBy ? 'Добавил(а): ' + nameOf(a.addedBy) : '' }),
+    btn('Изменить', function () { openAllergen(a); }, 'btn btn-sm')));
+  return card;
+}
+function allergenList() {
+  var q = norm(S.aq).trim();
+  var list = S.allergens.filter(function (a) {
+    if (S.asev && a.sev !== S.asev) return false;
+    if (!q) return true;
+    var hay = norm([a.name, a.aka, a.cat, a.reaction, a.safe].join(' '));
+    return q.split(/\s+/).every(function (w) { return hasTerm(hay, w); });
+  });
+  list.sort(function (x, y) { return (y.sev || 0) - (x.sev || 0) || String(x.name).localeCompare(String(y.name), 'ru'); });
+  var box = h('div', { id: 'al-list', class: 'al-list' });
+  if (!list.length) {
+    var none = !S.allergens.length;
+    box.appendChild(h('div', { class: 'card', style: 'grid-column:1/-1' },
+      h('h2', { text: none ? 'Список пока пуст' : 'Ничего не найдено' }),
+      h('p', { class: 'lead', text: none ? 'Добавьте первый продукт: название, как проявляется реакция, под какими названиями он прячется в составе. К записи можно приложить фото упаковки или состава.' : 'Попробуй другое слово или сбрось фильтр по тяжести.' }),
+      none ? h('div', { class: 'btn-row' }, btn('Добавить первый аллерген', function () { openAllergen(null); }, 'btn btn-primary')) : null));
+    return box;
+  }
+  list.forEach(function (a) { box.appendChild(allergenCard(a)); });
+  return box;
+}
+function viewAllergens() {
+  var counts = { 0: S.allergens.length }; [1, 2, 3, 4].forEach(function (n) { counts[n] = S.allergens.filter(function (a) { return a.sev === n; }).length; });
+  var sec = h('section', { class: 'stack' });
+  sec.appendChild(h('div', { class: 'al-top' },
+    h('div', { class: 'stack', style: 'gap:4px' }, h('div', { class: 'eyebrow', text: 'Общий список пары' }), h('h1', { text: 'Аллергены' })),
+    btn('Добавить аллерген', function () { openAllergen(null); }, 'btn btn-primary')));
+  sec.appendChild(viewCheck());
+  var chips = h('div', { class: 'chips', role: 'group', 'aria-label': 'Фильтр по тяжести' });
+  chips.appendChild(btn('Все · ' + counts[0], function () { S.asev = 0; render(true); }, 'chip' + (!S.asev ? ' on' : ''), { 'aria-pressed': pr(!S.asev) }));
+  [4, 3, 2, 1].forEach(function (n) { chips.appendChild(btn(SEV_LABEL[n] + ' · ' + counts[n], function () { S.asev = S.asev === n ? 0 : n; render(true); }, 'chip' + (S.asev === n ? ' on' : ''), { 'aria-pressed': pr(S.asev === n) })); });
+  sec.appendChild(h('div', { class: 'stack', style: 'gap:10px' },
+    h('input', { id: 'al-q', type: 'search', class: 'inp', placeholder: 'Найти по названию, составу или категории', 'aria-label': 'Поиск по списку', value: S.aq, oninput: function () { S.aq = this.value; refreshList(); } }), chips));
+  sec.appendChild(allergenList());
+  return sec;
+}
+
+function openAllergen(a) {
+  var d = a ? { name: a.name || '', sev: a.sev || 2, cat: a.cat || '', reaction: a.reaction || '', aka: a.aka || '', safe: a.safe || '', confirmed: !!a.confirmed, notes: a.notes || '', photos: (a.photos || []).slice() }
+    : { name: '', sev: 2, cat: '', reaction: '', aka: '', safe: '', confirmed: false, notes: '', photos: [] };
+  S.sheet = { id: a ? a.id : null, draft: d, origPhotos: a ? (a.photos || []).slice() : [], addedBy: a ? a.addedBy : null, ts: a ? a.ts : null, uploading: 0, err: '', confirmDel: false };
+  render(true);
+  setTimeout(function () { var e = $('#al-name'); if (e && !a) e.focus(); }, 60);
+}
+function dropAssets(ids) {
+  if (!S.assetsNS) return;
+  ids.forEach(function (id) { S.assetsNS.delete(id).catch(function () {}); });
+}
+function closeSheet() {
+  var sh = S.sheet; if (!sh) return;
+  dropAssets(sh.draft.photos.filter(function (id) { return sh.origPhotos.indexOf(id) < 0; }));
+  S.sheet = null; render(true);
+}
+function saveSheet() {
+  var sh = S.sheet, d = sh.draft;
+  if (!d.name.trim()) { sh.err = 'Укажи название продукта.'; render(true); return; }
+  if (sh.uploading) { sh.err = 'Подожди, фото ещё загружаются.'; render(true); return; }
+  var id = sh.id || rid();
+  var body = { name: d.name.trim(), sev: d.sev, cat: d.cat || '', reaction: d.reaction.trim(), aka: d.aka.trim(), safe: d.safe.trim(), confirmed: !!d.confirmed,
+    notes: d.notes.trim(), photos: d.photos.slice(), addedBy: sh.addedBy || S.uid || '', ts: sh.ts || Date.now(), editedBy: S.uid || '', editedTs: Date.now() };
+  var removed = sh.origPhotos.filter(function (x) { return d.photos.indexOf(x) < 0; });
+  S.sheet = null; render(true);
+  writeAllergen(id, body).then(function () { dropAssets(removed); toast('Сохранено'); wantNames([body.addedBy, body.editedBy]); })
+    .catch(function (e) { toast('Не удалось сохранить: ' + errMsg(e), true); });
+}
+function deleteSheet() {
+  var sh = S.sheet, ph = sh.draft.photos.slice(), id = sh.id;
+  S.sheet = null; render(true);
+  removeAllergen(id).then(function () { dropAssets(ph); toast('Запись удалена'); }).catch(function (e) { toast('Не удалось удалить: ' + errMsg(e), true); });
+}
+function uploadErr(e) {
+  var c = e && e.code;
+  if (c === 'too_large') return 'Файл слишком большой, предел 20 МБ.';
+  if (c === 'unsupported_type' || (e && e.message === 'unsupported')) return 'Формат не подходит. Нужны JPEG, PNG, WebP или GIF.';
+  if (c === 'quota_or_state') return 'Хранилище фото заполнено.';
+  if (c === 'rate_limited') return 'Слишком часто, подожди немного.';
+  return 'Не удалось загрузить фото.';
+}
+function prepImage(file) {
+  if (!/^image\//.test(file.type)) return Promise.reject(new Error('unsupported'));
+  var fallback = function () {
+    if (/^image\/(png|jpeg|gif|webp)$/.test(file.type)) return { blob: file, type: file.type };
+    throw new Error('unsupported');
+  };
+  if (!window.createImageBitmap) return Promise.resolve().then(fallback);
+  return createImageBitmap(file).then(function (bmp) {
+    var sc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    var w = Math.max(1, Math.round(bmp.width * sc)), hh = Math.max(1, Math.round(bmp.height * sc));
+    var cv = document.createElement('canvas'); cv.width = w; cv.height = hh;
+    cv.getContext('2d').drawImage(bmp, 0, 0, w, hh);
+    return new Promise(function (res) { cv.toBlob(res, 'image/jpeg', 0.84); }).then(function (blob) {
+      if (!blob) return fallback();
+      return { blob: blob, type: 'image/jpeg' };
+    });
+  }, function () { return fallback(); });
+}
+function uploadFiles(files) {
+  var sh = S.sheet; if (!sh || !S.assetsNS) return;
+  var list = Array.prototype.slice.call(files);
+  var chain = Promise.resolve();
+  list.forEach(function (f) {
+    chain = chain.then(function () {
+      sh.uploading++; render(true);
+      return prepImage(f).then(function (prep) { return S.assetsNS.upload(prep.blob, { type: prep.type }); })
+        .then(function (r) { sh.draft.photos.push(r.id); })
+        .catch(function (e) { toast(uploadErr(e), true); })
+        .then(function () { sh.uploading--; if (S.sheet === sh) render(true); });
+    });
+  });
+}
+function viewSheet() {
+  var sh = S.sheet, d = sh.draft;
+  var s = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'sh-title' });
+  s.appendChild(h('h2', { id: 'sh-title', text: sh.id ? 'Изменить аллерген' : 'Новый аллерген' }));
+  s.appendChild(h('div', null, h('label', { class: 'lbl', 'for': 'al-name', text: 'Название продукта или вещества' }),
+    h('input', { id: 'al-name', type: 'text', class: 'inp', maxlength: '80', placeholder: 'Например: арахис', value: d.name, oninput: function () { d.name = this.value; } })));
+  var sev = h('div', { class: 'chips', role: 'group', 'aria-label': 'Тяжесть реакции' });
+  [1, 2, 3, 4].forEach(function (n) { sev.appendChild(btn(SEV_LABEL[n], function () { d.sev = n; render(true); }, 'chip' + (d.sev === n ? ' on' : ''), { 'aria-pressed': pr(d.sev === n) })); });
+  s.appendChild(h('div', null, h('div', { class: 'lbl', text: 'Насколько тяжёлая реакция' }), sev, h('p', { class: 'help', text: SEV_DESC[d.sev] })));
+  var cats = h('div', { class: 'chips', role: 'group', 'aria-label': 'Категория' });
+  CATS.forEach(function (c) { cats.appendChild(btn(c, function () { d.cat = d.cat === c ? '' : c; render(true); }, 'chip' + (d.cat === c ? ' on' : ''), { 'aria-pressed': pr(d.cat === c) })); });
+  s.appendChild(h('div', null, h('div', { class: 'lbl', text: 'Категория' }), cats));
+  s.appendChild(h('div', null, h('label', { class: 'lbl', 'for': 'al-react', text: 'Как проявляется реакция' }),
+    h('textarea', { id: 'al-react', class: 'ta', rows: '2', placeholder: 'Сыпь, отёк губ, зуд, тошнота…', value: d.reaction, oninput: function () { d.reaction = this.value; } })));
+  s.appendChild(h('div', null, h('label', { class: 'lbl', 'for': 'al-aka', text: 'Другие названия и где может прятаться' }),
+    h('input', { id: 'al-aka', type: 'text', class: 'inp', placeholder: 'Через запятую: казеин, молочный белок, сыворотка', value: d.aka, oninput: function () { d.aka = this.value; } }),
+    h('p', { class: 'help', text: 'По этим словам работает проверка состава.' })));
+  s.appendChild(h('div', null, h('label', { class: 'lbl', 'for': 'al-safe', text: 'Чем заменить' }),
+    h('input', { id: 'al-safe', type: 'text', class: 'inp', placeholder: 'Например: растительное молоко без орехов', value: d.safe, oninput: function () { d.safe = this.value; } })));
+  s.appendChild(swRow('sw-conf', d.confirmed, 'Подтверждено врачом или анализом', null, function (v) { d.confirmed = v; render(true); }));
+  s.appendChild(h('div', null, h('label', { class: 'lbl', 'for': 'al-notes', text: 'Заметки' }),
+    h('textarea', { id: 'al-notes', class: 'ta', rows: '2', value: d.notes, oninput: function () { d.notes = this.value; } })));
+  var ph = h('div', { class: 'photos' });
+  d.photos.forEach(function (id, i) {
+    ph.appendChild(h('div', { class: 'thumb ph-rm' }, thumbImg(id, 'Фото ' + (i + 1)),
+      h('button', { type: 'button', class: 'x', 'aria-label': 'Убрать фото ' + (i + 1), onclick: function () { d.photos.splice(i, 1); render(true); } }, '×')));
+  });
+  var photoBlock = h('div', null, h('div', { class: 'lbl', text: 'Фотографии' }), ph);
+  if (S.assetsNS) {
+    ph.appendChild(h('button', { type: 'button', class: 'thumb ph-add', onclick: function () { var f = $('#al-file'); if (f) f.click(); } }, sh.uploading ? 'Загружаю…' : '+ фото'));
+    photoBlock.appendChild(h('input', { id: 'al-file', type: 'file', accept: 'image/*', multiple: true, class: 'sr', tabindex: '-1', onchange: function () { var fl = Array.prototype.slice.call(this.files); this.value = ''; uploadFiles(fl); } }));
+    photoBlock.appendChild(h('p', { class: 'help', text: 'Снимки упаковки, состава, результатов анализов. Большие фото сжимаются до 1600 px.' }));
+  } else {
+    photoBlock.appendChild(h('p', { class: 'help', text: 'Загрузка фото недоступна для этого доступа к странице. Нужны права на изменение: попроси владельца страницы выдать их.' }));
+  }
+  s.appendChild(photoBlock);
+  if (sh.err) s.appendChild(h('p', { class: 'small', style: 'color:var(--danger)', role: 'alert', text: sh.err }));
+  var actions = h('div', { class: 'btn-row' }, btn('Сохранить', saveSheet, 'btn btn-primary'), btn('Отмена', closeSheet, 'btn'));
+  s.appendChild(actions);
+  if (sh.id) {
+    if (sh.confirmDel) s.appendChild(h('div', { class: 'btn-row' }, h('span', { class: 'small', text: 'Удалить запись вместе с фото?' }), btn('Да, удалить', deleteSheet, 'btn btn-sm btn-danger'), btn('Не удалять', function () { sh.confirmDel = false; render(true); }, 'btn btn-sm')));
+    else s.appendChild(h('div', { class: 'btn-row' }, btn('Удалить запись', function () { sh.confirmDel = true; render(true); }, 'btn btn-sm btn-quiet')));
+  }
+  return h('div', { class: 'overlay', onclick: function (e) { if (e.target === this) closeSheet(); } }, s);
+}
+function viewLightbox() {
+  var lb = S.lightbox, n = lb.ids.length;
+  function step(dlt) { lb.i = (lb.i + dlt + n) % n; render(true); }
+  var inner = h('div', { class: 'lightbox-in' }, thumbImg(lb.ids[lb.i], 'Фото: ' + lb.title),
+    h('div', { class: 'btn-row' },
+      n > 1 ? btn('‹', function () { step(-1); }, 'btn', { 'aria-label': 'Предыдущее фото' }) : null,
+      h('span', { style: 'color:#fff;align-self:center', text: lb.title + (n > 1 ? ' · ' + (lb.i + 1) + ' из ' + n : '') }),
+      n > 1 ? btn('›', function () { step(1); }, 'btn', { 'aria-label': 'Следующее фото' }) : null,
+      btn('Закрыть', function () { S.lightbox = null; render(true); }, 'btn')));
+  return h('div', { class: 'overlay lightbox', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Фото', onclick: function (e) { if (e.target === this) { S.lightbox = null; render(true); } } }, inner);
+}
+
+/* ====================== boot ====================== */
+function subscribe() {
+  var db = S.db;
+  var ref = db.doc('data/users/' + S.uid + '/profile');
+  S.refs.profile = ref;
+  var onErr = function (e) { if (e && e.code === 'revoked') S.revoked = true; else toast('Хранилище: ' + errMsg(e), true); render(true); };
+  ref.onSnapshot(function (snap) {
+    if (!S.profileDirty) S.profile = snap.exists ? clone(snap.data()) : (S.profile || {});
+    else if (!S.profile) S.profile = {};
+    S.profileLoaded = true; render(); maybeSync();
+  }, onErr);
+  ref.collection('days').onSnapshot(function (qs) {
+    var d = {};
+    qs.docs.forEach(function (x) { d[x.id] = clone(x.data()); });
+    Object.keys(S.dirtyDays).forEach(function (k) { if (S.days[k]) d[k] = S.days[k]; else delete d[k]; });
+    S.days = d; S.daysLoaded = true; render(); maybeSync();
+  }, onErr);
+  db.collection('allergens').onSnapshot(function (qs) {
+    S.allergens = qs.docs.map(function (x) { var o = clone(x.data()); o.id = x.id; return o; });
+    S.allergensLoaded = true;
+    var ids = []; S.allergens.forEach(function (a) { ids.push(a.addedBy, a.editedBy); });
+    wantNames(ids); render();
+  }, onErr);
+  db.collection('shared').onSnapshot(function (qs) {
+    var o = {}; qs.docs.forEach(function (x) { o[x.id] = clone(x.data()); });
+    S.shared = o; S.sharedLoaded = true; wantNames(Object.keys(o)); render(); maybeSync();
+  }, onErr);
+}
+function goDemo() {
+  S.mode = 'demo'; S.profile = {}; S.profileLoaded = true; S.daysLoaded = true; S.allergensLoaded = true; S.sharedLoaded = true;
+  render(true);
+}
+function init() {
+  S.slowTimer = setTimeout(function () { if (!S.profileLoaded) { S.slow = true; render(); } }, 10000);
+  return Backend.getUser().then(function (u) {
+    if (!u) { S.mode = 'login'; S.profile = {}; S.profileLoaded = true; render(true); return; }
+    S.uid = u.id;
+    S.me = { id: u.id, name: null, avatarUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==' };
+    S.user = Backend; S.db = Backend.db; S.assetsNS = null; S.dlNS = null;
+    S.mode = 'live';
+    subscribe();
+    render();
+  }, function (e) { S.mode = 'login'; S.profileLoaded = true; toast('Вход: ' + errMsg(e), true); render(true); });
+}
+
+/* ====================== вход и пара ====================== */
+function viewLogin() {
+  var mail = S.loginMail || '';
+  var inp = h('input', { id: 'li-mail', type: 'email', class: 'inp', autocomplete: 'email', inputmode: 'email', placeholder: 'почта@пример.ru', value: mail,
+    'aria-label': 'Почта', oninput: function () { S.loginMail = this.value; } });
+  var send = function () {
+    var v = (S.loginMail || '').trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { toast('Проверьте адрес почты', true); return; }
+    Backend.signIn(v).then(function () { S.loginSent = v; render(true); }, function (e) { toast('Не получилось отправить: ' + errMsg(e), true); });
+  };
+  return h('section', { class: 'hello' },
+    h('h1', { text: 'Вход' }),
+    h('p', { class: 'lead', text: 'Введите почту. Пришлём ссылку для входа, пароль не нужен. Открывайте ссылку на этом же телефоне.' }),
+    h('div', { class: 'card' },
+      h('div', null, h('label', { class: 'lbl', 'for': 'li-mail', text: 'Почта' }), inp),
+      h('div', { class: 'btn-row' }, btn('Получить ссылку', send, 'btn btn-primary')),
+      S.loginSent ? h('p', { class: 'help', text: 'Ссылка отправлена на ' + S.loginSent + '. Проверьте почту, в том числе папку «Спам».' }) : null));
+}
+function inviteCard() {
+  var box = h('section', { class: 'card' }, h('h2', { text: 'Пригласить партнёра' }),
+    h('p', { class: 'lead', text: 'Создайте код и отправьте его партнёру. Он вводит его у себя в приложении. Код одноразовый.' }));
+  var out = h('div', { class: 'stack', style: 'gap:8px' });
+  box.appendChild(h('div', { class: 'btn-row' }, btn('Создать код', function () {
+    Backend.createInvite().then(function (code) {
+      out.textContent = '';
+      out.appendChild(h('div', { class: 'result' }, h('div', { class: 'eyebrow', text: 'Код приглашения' }), h('b', { class: 'nums', style: 'font-size:22px;letter-spacing:.1em', text: code })));
+      toast('Код создан', false);
+    }, function (e) { toast('Не получилось создать код: ' + errMsg(e), true); });
+  }, 'btn btn-primary')));
+  box.appendChild(out);
+  return box;
+}
+function joinCard() {
+  var inp = h('input', { id: 'join-code', type: 'text', class: 'inp', autocomplete: 'off', autocapitalize: 'characters', placeholder: 'Например, K7QX2M9B', 'aria-label': 'Код приглашения', oninput: function () { S.joinCode = this.value; } });
+  return h('section', { class: 'card' }, h('h2', { text: 'Подключиться к партнёрше' }),
+    h('p', { class: 'lead', text: 'Введите код, который она создала в своих настройках.' }),
+    h('div', { class: 'btn-row', style: 'align-items:center' }, inp, btn('Подключить', function () {
+      Backend.acceptInvite(S.joinCode || '').then(function () {
+        S.joinCode = ''; toast('Готово, пара создана', false); render(true);
+      }, function (e) { toast(errMsg(e), true); });
+    }, 'btn btn-primary')));
+}
+
+(function bootEvents() {
+  var r = (location.hash || '').slice(1);
+  if (ROUTES.indexOf(r) >= 0) S.route = r;
+  window.addEventListener('hashchange', function () {
+    var x = (location.hash || '').slice(1);
+    if (ROUTES.indexOf(x) >= 0 && x !== S.route) { flushAll(); S.route = x; render(true); }
+  });
+  document.addEventListener('focusin', function (e) {
+    var t = e.target;
+    if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName) && t.type !== 'button' && t.type !== 'checkbox' && t.type !== 'file') S.typing = true;
+  });
+  document.addEventListener('focusout', function () { S.typing = false; setTimeout(flushDirty, 350); });
+  document.addEventListener('pointerdown', function () { S.pointer = true; }, true);
+  var up = function () { S.pointer = false; setTimeout(flushDirty, 80); };
+  document.addEventListener('pointerup', up, true);
+  document.addEventListener('pointercancel', up, true);
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (S.lightbox) { S.lightbox = null; render(true); } else if (S.sheet) closeSheet();
+  });
+  window.addEventListener('pagehide', flushAll);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') flushAll();
+    else { render(); maybeSync(); }
+  });
+})();
+
+try {
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  (mq.addEventListener ? mq.addEventListener('change', function () { render(true); }) : null);
+  new MutationObserver(function () { render(true); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+} catch (e) {}
+var rzT = null;
+window.addEventListener('resize', function () { clearTimeout(rzT); rzT = setTimeout(function () { D.dirty = true; if (S.route === 'charts') render(); }, 200); });
+requestAnimationFrame(dropFrame);
+render(true);
+init();
+})();
+
+
+</script>
+<script>if("serviceWorker" in navigator && location.protocol==="https:"){navigator.serviceWorker.register("sw.js");}</script>
